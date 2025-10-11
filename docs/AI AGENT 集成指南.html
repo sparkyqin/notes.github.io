@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent集成思考 | 数字信息卡</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Poppins:wght@300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, rgba(200, 220, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            color: rgba(255, 255, 255, 0.9);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            background-color: #0f172a;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            background: radial-gradient(circle at 70% 30%, rgba(100, 150, 255, 0.15), transparent 50%),
+                        radial-gradient(circle at 30% 70%, rgba(255, 100, 200, 0.1), transparent 50%);
+            z-index: -1;
+        }
+        .glass-card {
+            backdrop-filter: blur(25px);
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.05);
+            border-radius: 0.6rem;
+        }
+        .header-glass {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .breaker-glass {
+            backdrop-filter: blur(25px);
+            background: linear-gradient(90deg, rgba(124, 58, 237, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .anchor-point {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 700;
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+            color: transparent;
+            font-size: 3.5rem;
+            line-height: 1;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 700;
+        }
+        .content-item {
+            position: relative;
+        }
+        .content-item::before {
+            content: "";
+            position: absolute;
+            left: -1.5rem;
+            top: 0.5rem;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: rgba(167, 139, 250, 0.8);
+            box-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #a78bfa, #7dd3fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+<body class="p-6 flex flex-col items-center">
+    <div class="w-full max-w-6xl">
+        <!-- Header -->
+        <div class="header-glass rounded-t-lg p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl gradient-text font-bold">AI AGENT 集成指南</h1>
+                <div class="text-sm opacity-70">
+                    <span>数字智库系列</span>
+                    <span class="mx-2">|</span>
+                    <span>2024年6月</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-12 gap-6">
+            <!-- Sidebar - 4 columns -->
+            <div class="col-span-4 space-y-6">
+                <div class="glass-card p-6 h-48 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="anchor-point">01</div>
+                        <h3 class="text-xl font-bold mt-2">流程评估</h3>
+                    </div>
+                </div>
+                <div class="glass-card p-6 h-48 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="anchor-point">02</div>
+                        <h3 class="text-xl font-bold mt-2">工具设计</h3>
+                    </div>
+                </div>
+                <div class="glass-card p-6 h-48 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="anchor-point">03</div>
+                        <h3 class="text-xl font-bold mt-2">技术考量</h3>
+                    </div>
+                </div>
+                <div class="glass-card p-6 h-48 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="anchor-point">04</div>
+                        <h3 class="text-xl font-bold mt-2">交互设计</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content - 8 columns -->
+            <div class="col-span-8 grid grid-cols-2 gap-6">
+                <!-- Card 1 -->
+                <div class="glass-card p-6 col-span-2">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-robot mr-3 text-purple-300"></i>
+                        <span>AI Agent 集成思考</span>
+                    </h2>
+                    <p class="opacity-80 leading-relaxed">
+                        为公司现有业务集成AI Agent或迁移到AI Agent时的关键考量点和最佳实践总结。
+                    </p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold mb-3 flex items-center">
+                        <i class="far fa-lightbulb mr-2 text-blue-300"></i>
+                        <span>流程评估</span>
+                    </h3>
+                    <div class="content-item mb-3">
+                        <p class="opacity-80 leading-relaxed">
+                            如果流程路径确定且效率高，只需在原有流程上集成AI功能，不一定需要转变为Agent。
+                        </p>
+                    </div>
+                    <div class="content-item">
+                        <p class="opacity-80 leading-relaxed">
+                            Agent没有固定流程，依赖用户输入由LLM决策调用工具。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold mb-3 flex items-center">
+                        <i class="fas fa-tools mr-2 text-green-300"></i>
+                        <span>工具设计</span>
+                    </h3>
+                    <div class="content-item mb-3">
+                        <p class="opacity-80 leading-relaxed">
+                            为Agent重新设计新工具，而非让Agent使用现有为人设计的工具。
+                        </p>
+                    </div>
+                    <div class="content-item">
+                        <p class="opacity-80 leading-relaxed">
+                            工具要融入上下文管理：描述清晰、输入参数明确、输出结果简洁。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold mb-3 flex items-center">
+                        <i class="fas fa-code mr-2 text-yellow-300"></i>
+                        <span>技术考量</span>
+                    </h3>
+                    <div class="content-item mb-3">
+                        <p class="opacity-80 leading-relaxed">
+                            不要为了MCP而用MCP，除非需要兼容不同模型和平台。
+                        </p>
+                    </div>
+                    <div class="content-item">
+                        <p class="opacity-80 leading-relaxed">
+                            工具数量不宜过多，可按功能拆分子智能体管理。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold mb-3 flex items-center">
+                        <i class="fas fa-mouse-pointer mr-2 text-pink-300"></i>
+                        <span>交互设计</span>
+                    </h3>
+                    <div class="content-item mb-3">
+                        <p class="opacity-80 leading-relaxed">
+                            需要为Agent重新设计交互方式，通常以对话为主。
+                        </p>
+                    </div>
+                    <div class="content-item">
+                        <p class="opacity-80 leading-relaxed">
+                            可参考主流Agent产品如ChatGPT、Claude等的交互方式。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 6 -->
+                <div class="glass-card p-6 col-span-2">
+                    <h3 class="text-xl font-bold mb-3 flex items-center">
+                        <i class="fas fa-sitemap mr-2 text-indigo-300"></i>
+                        <span>子智能体架构</span>
+                    </h3>
+                    <div class="content-item mb-3">
+                        <p class="opacity-80 leading-relaxed">
+                            工具过多时可按功能拆分子智能体，主Agent负责调度，子Agent拥有独立工具集和上下文。
+                        </p>
+                    </div>
+                    <div class="content-item">
+                        <p class="opacity-80 leading-relaxed">
+                            结果有依赖关系时避免并行执行，防止上下文混乱。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mid Breaker -->
+        <div class="breaker-glass rounded-lg p-6 my-6">
+            <div class="flex items-center">
+                <i class="fas fa-star text-white text-2xl mr-4"></i>
+                <div>
+                    <h3 class="text-xl font-bold">核心原则</h3>
+                    <p class="opacity-90 mt-1">为Agent而非为人设计 • 保持上下文清晰 • 交互优先</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expanded Content -->
+        <div class="glass-card p-6 mb-6">
+            <h2 class="text-2xl font-bold mb-4">详细实施建议</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-bold mb-2 flex items-center">
+                        <i class="fas fa-project-diagram mr-2 text-purple-300"></i>
+                        <span>工具设计规范</span>
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="content-item pl-4">工具描述要具体明确，让LLM清楚使用场景</li>
+                        <li class="content-item pl-4">输入参数要明确类型和格式要求</li>
+                        <li class="content-item pl-4">输出结果要简洁，避免无关上下文</li>
+                        <li class="content-item pl-4">大数据输出可保存到外部文件按需读取</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-2 flex items-center">
+                        <i class="fas fa-network-wired mr-2 text-blue-300"></i>
+                        <span>子智能体实践</span>
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="content-item pl-4">按功能领域划分(如数据分析、文档处理等)</li>
+                        <li class="content-item pl-4">每个子智能体维护独立上下文</li>
+                        <li class="content-item pl-4">主Agent负责任务分发和结果整合</li>
+                        <li class="content-item pl-4">避免有依赖关系的任务并行执行</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-800 rounded-b-lg p-6 text-gray-400 text-sm">
+            <div class="flex justify-between items-center">
+                <div>
+                    <i class="far fa-copyright mr-1"></i>
+                    <span>2024 数字智库 | AI战略研究系列</span>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="hover:text-white transition"><i class="fab fa-github"></i></a>
+                    <a href="#" class="hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-white transition"><i class="fas fa-globe"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
