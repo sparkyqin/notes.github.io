@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spec-Driven Development Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Poppins:wght@300&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at 20% 30%, rgba(200, 220, 255, 0.1), transparent 60%),
+                        radial-gradient(circle at 80% 70%, rgba(220, 200, 255, 0.1), transparent 60%);
+            color: #333;
+        }
+        .glass-card {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+        }
+        .header-glass {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .footer-dark {
+            background: #1f2937;
+        }
+        .hollow-icon {
+            -webkit-text-stroke: 1px #4f46e5;
+            color: transparent;
+        }
+        h1, h2, h3 {
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 700;
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #4f46e5, #a855f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <!-- Header Section -->
+    <header class="header-glass p-6 rounded-lg mb-8">
+        <div class="flex justify-between items-center">
+            <h1 class="text-3xl gradient-text">AI开发探索系列</h1>
+            <div class="text-sm text-gray-600">
+                <span class="font-medium">ThoughtWorks技术洞察</span> · 第15期 · 2025年10月
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-12 gap-6 mb-8">
+        <!-- Sidebar (4 columns) -->
+        <div class="col-span-4 space-y-6">
+            <div class="glass-card p-6 flex flex-col items-center text-center">
+                <div class="hollow-icon text-6xl mb-4">
+                    <i class="fa-regular fa-user"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Birgitta Böckeler</h3>
+                <p class="text-sm text-gray-600">ThoughtWorks杰出工程师</p>
+                <p class="text-xs mt-2">20+年软件开发与技术领导经验</p>
+            </div>
+
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold mb-3 gradient-text">SDD核心定义</h3>
+                <p class="text-sm mb-4">规范驱动开发(Spec-driven development)意味着在编写代码之前先编写"规范"，该规范成为人类和AI的共同真相来源。</p>
+                <div class="flex items-start text-sm">
+                    <i class="fa-light fa-quote-left text-2xl mr-2 text-purple-300"></i>
+                    <p>在这个新世界中，维护软件意味着演进规范...开发的通用语言提升到更高层次，代码成为最后一英里的实现方式。</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold mb-3 gradient-text">关键工具对比</h3>
+                <div class="space-y-4 text-sm">
+                    <div>
+                        <h4 class="font-semibold">Kiro</h4>
+                        <p>轻量级VS Code扩展，遵循"需求→设计→任务"三阶段流程</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold">Spec-kit</h4>
+                        <p>GitHub CLI工具，提供"宪法→规范→计划→任务"循环工作流</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold">Tessl框架</h4>
+                        <p>唯一真正探索规范即源代码(Spec-as-source)方法的工具</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold mb-3 gradient-text">SDD实施层级</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-start">
+                        <i class="fa-light fa-1 mr-2 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-semibold">规范优先(Spec-first)</h4>
+                            <p>先编写详细规范，再用于AI辅助开发</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fa-light fa-2 mr-2 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-semibold">规范锚定(Spec-anchored)</h4>
+                            <p>任务完成后保留规范，用于功能演进</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fa-light fa-3 mr-2 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-semibold">规范即源(Spec-as-source)</h4>
+                            <p>规范成为主要维护对象，人类不再直接编辑代码</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content (8 columns) -->
+        <div class="col-span-8 space-y-6">
+            <div class="glass-card p-6">
+                <h2 class="text-2xl font-bold mb-4 gradient-text">理解规范驱动开发：Kiro、Spec-kit和Tessl的实践探索</h2>
+                <div class="prose prose-sm max-w-none">
+                    <p>在当前AI编程的快速发展中，"规范驱动开发"(SDD)成为最新流行术语。本文通过分析三种自称为SDD工具的产品(Kiro、spec-kit和Tessl)，试图厘清这一概念的实际含义和应用现状。</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold mb-3 gradient-text">规范是什么？</h3>
+                <div class="prose prose-sm max-w-none">
+                    <p>规范是使用自然语言编写的结构化、面向行为的产物(或一组相关产物)，表达软件功能并作为AI编码代理的指导。目前最接近一致的定义是将规范类比为"产品需求文档"。</p>
+                    <p>需要区分规范与代码库的更通用上下文文档(如规则文件或高级描述)。某些工具称后者为"记忆库"(memory bank)，这些文件与代码库中的所有AI编码会话相关，而规范仅与创建或更改特定功能的任务相关。</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold mb-3 gradient-text">工具工作流分析</h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-purple-600">Kiro工作流</h4>
+                        <p class="text-sm">需求→设计→任务三阶段，每个阶段对应一个Markdown文档。包含"记忆库"概念(称为"steering")，默认包含product.md、structure.md和tech.md三个文件。</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-purple-600">Spec-kit工作流</h4>
+                        <p class="text-sm">宪法→规范→计划→任务的循环流程。"宪法"(constitution)作为高级原则的不可变规则库。每个工作步骤生成多个Markdown文件，并使用检查清单跟踪用户澄清、宪法违规等。</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-purple-600">Tessl框架</h4>
+                        <p class="text-sm">唯一明确追求规范锚定方法并探索规范即源代码层级的工具。规范与代码文件保持1:1映射关系，代码文件顶部标注"// GENERATED FROM SPEC - DO NOT EDIT"。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold mb-3 gradient-text">挑战与观察</h3>
+                <div class="prose prose-sm max-w-none">
+                    <ul>
+                        <li><strong>通用工作流程问题：</strong>现有工具提供的固定工作流难以适应不同规模问题，小型修复可能产生过多文档</li>
+                        <li><strong>Markdown审查负担：</strong>相比审查代码，大量生成的Markdown文件更加冗长乏味</li>
+                        <li><strong>控制幻觉：</strong>尽管上下文窗口扩大，AI代理仍可能忽略部分指令或过度执行</li>
+                        <li><strong>功能与技术规范分离：</strong>实践中难以明确区分功能规范和技术实现细节</li>
+                        <li><strong>目标用户模糊：</strong>不清楚SDD是为开发者设计还是促进开发与产品的跨职能协作</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold mb-3 gradient-text">历史经验借鉴</h3>
+                <div class="prose prose-sm max-w-none">
+                    <p>规范即源代码(Spec-as-source)与模型驱动开发(MDD)有重要相似之处。MDD使用自定义UML或文本DSL作为规范，通过代码生成器转换为代码，但因抽象层级尴尬和约束过多未能普及。</p>
+                    <p>LLM消除了MDD的许多约束，但也引入非确定性。我们可能同时面临MDD的僵化性和LLM的不确定性双重挑战。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mid-Breaker Section -->
+    <div class="glass-card w-full p-8 mb-8" style="background: linear-gradient(90deg, rgba(79, 70, 229, 0.1), rgba(168, 85, 247, 0.1));">
+        <div>
+            <h3 class="text-2xl font-bold mb-2 gradient-text text-center">关键洞见</h3>
+            <p>规范优先原则在AI辅助编程中具有明确价值，但"规范驱动开发"仍缺乏统一定义。现有工具可能过于字面化地复制传统工作流，反而放大了审查负担和幻觉问题。有效的SDD工具需要支持多种工作流以适应不同问题规模，并提供卓越的规范审查体验。</p>
+        </div>
+    </div>
+</body>
+</html>
