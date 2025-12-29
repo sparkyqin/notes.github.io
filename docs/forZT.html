@@ -60,6 +60,15 @@
             animation: float 6s ease-in-out infinite;
         }
 
+        /* Music Disc Spin */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spin 8s linear infinite;
+        }
+
         /* Candle Flame */
         .flame {
             animation: flicker 1s infinite alternate;
@@ -196,8 +205,12 @@
             const [candlesBlown, setCandlesBlown] = useState(false);
             const [showConfetti, setShowConfetti] = useState(false);
             const [timeTogether, setTimeTogether] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+            
+            // Music State
+            const [isPlaying, setIsPlaying] = useState(false);
+            const audioRef = useRef(null);
 
-            // CONFIG: Set your relationship start date here (Met: 2014-10-02)
+            // CONFIG: Met: 2014-10-02
             const startDate = new Date("2014-10-02T00:00:00"); 
 
             useEffect(() => {
@@ -215,6 +228,27 @@
                 return () => clearInterval(timer);
             }, []);
 
+            const handleEnter = () => {
+                setStep(1);
+                // Attempt to play music on user interaction
+                if (audioRef.current) {
+                    audioRef.current.play().then(() => {
+                        setIsPlaying(true);
+                    }).catch(e => console.log("Audio play failed:", e));
+                }
+            };
+
+            const toggleMusic = () => {
+                if (audioRef.current) {
+                    if (isPlaying) {
+                        audioRef.current.pause();
+                    } else {
+                        audioRef.current.play();
+                    }
+                    setIsPlaying(!isPlaying);
+                }
+            };
+
             const handleBlowCandles = () => {
                 setCandlesBlown(true);
                 setShowConfetti(true);
@@ -231,160 +265,166 @@
 
             const [currentNote, setCurrentNote] = useState(0);
 
-            // Intro Screen
-            if (step === 0) {
-                return (
-                    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center relative overflow-hidden text-white">
-                        <StarField />
-                        <div className="z-10 text-center cursor-pointer" onClick={() => setStep(1)}>
-                            <div className="text-pink-500 animate-heartbeat text-9xl mb-8 drop-shadow-[0_0_15px_rgba(236,72,153,0.8)]">
-                                ❤
-                            </div>
-                            <p className="text-xl md:text-2xl handwriting opacity-80 animate-pulse">
-                                点击爱心，开启专属你的宇宙
-                            </p>
-                        </div>
-                    </div>
-                );
-            }
-
-            // Main Content
             return (
-                <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 text-white overflow-y-auto overflow-x-hidden relative">
-                    <StarField />
-                    <Confetti active={showConfetti} />
+                <div className="min-h-screen bg-slate-900 text-white overflow-hidden font-sans">
+                    {/* Audio Element */}
+                    <audio 
+                        ref={audioRef} 
+                        loop 
+                        src="https://m701.music.126.net/20251229213602/ba5c29ce63430e338ad195853a49ecf0/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/44041937333/292d/757b/9403/54fb039ce1eee13926c4e2cd35ab65d7.mp3?vuutv=FkIA/MRzFitS4ChE17gGrW8+UqFfNf1Qp+MNtP7FQPButQVn2s8tyI8pP29/8578vr5txeLEo+6b0MSsN91vjc8pD6OC6BUiJR3Mdlmu27FQXd5PAh6bPAdtDgSaCVbMAEJ3pzTha9aY9wi3NlSdjQ==&cdntag=bWFyaz1vc193ZWIscXVhbGl0eV9zdGFuZGFyZA"
+                    />
 
-                    {/* Header */}
-                    <header className="relative z-10 pt-20 pb-10 text-center px-4">
-                        <h1 className="text-5xl md:text-7xl handwriting text-pink-300 mb-4 animate-float drop-shadow-lg">
-                            亲爱的老婆，生日快乐
-                        </h1>
-                        <p className="text-slate-300 text-lg md:text-xl font-light">
-                            To the love of my life & the mother of our angel
-                        </p>
-                    </header>
-
-                    {/* Time Together */}
-                    <section className="relative z-10 max-w-4xl mx-auto my-12 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 text-center">
-                        <h2 className="text-2xl md:text-3xl mb-8 text-pink-200 handwriting">我们相识相知的时间</h2>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {[
-                                { label: "天", val: timeTogether.days },
-                                { label: "小时", val: timeTogether.hours },
-                                { label: "分钟", val: timeTogether.minutes },
-                                { label: "秒", val: timeTogether.seconds }
-                            ].map((item, idx) => (
-                                <div key={idx} className="bg-white/10 p-4 rounded-xl">
-                                    <div className="text-3xl md:text-5xl font-bold text-pink-400 font-mono">
-                                        {item.val}
-                                    </div>
-                                    <div className="text-sm text-slate-400 mt-2">{item.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Milestones Timeline */}
-                    <section className="relative z-10 max-w-6xl mx-auto my-12 px-6">
-                        <h2 className="text-2xl md:text-3xl mb-8 text-pink-200 handwriting text-center">我们的幸福足迹</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {[
-                                { date: "2014.10.02", title: "初次相遇", icon: "💘", desc: "故事的开始" },
-                                { date: "2015.09.09", title: "执子之手", icon: "💍", desc: "领证纪念日" },
-                                { date: "2016.10.05", title: "浪漫婚礼", icon: "💒", desc: "许下终身誓言" },
-                                { date: "2020.01.28", title: "天使降临", icon: "👶", desc: "可爱的女儿出生" }
-                            ].map((m, i) => (
-                                <div key={i} className="bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/5 text-center hover:bg-white/20 transition-all hover:-translate-y-2 duration-300">
-                                    <div className="text-4xl mb-3">{m.icon}</div>
-                                    <h3 className="text-xl font-bold text-pink-300 mb-1">{m.title}</h3>
-                                    <div className="text-slate-300 font-mono text-sm mb-2">{m.date}</div>
-                                    <p className="text-slate-400 text-sm handwriting">{m.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Interactive Cake */}
-                    <section className="relative z-10 my-20 text-center">
-                         <h2 className="text-2xl md:text-3xl mb-8 text-pink-200 handwriting">
-                            {candlesBlown ? "愿望一定会实现！" : "点此吹灭蜡烛许愿"}
-                        </h2>
-                        
-                        <div 
-                            className="relative inline-block cursor-pointer transition-transform hover:scale-105"
-                            onClick={handleBlowCandles}
+                    {/* Music Control Button (Visible in Step 1) */}
+                    {step === 1 && (
+                        <button 
+                            onClick={toggleMusic}
+                            className="fixed top-4 right-4 z-50 p-3 bg-white/10 backdrop-blur rounded-full border border-white/20 hover:bg-white/20 transition-all group"
                         >
-                            {/* Cake SVG */}
-                            <svg width="300" height="300" viewBox="0 0 200 200">
-                                {/* Plate */}
-                                <ellipse cx="100" cy="170" rx="80" ry="20" fill="#e2e8f0" />
-                                
-                                {/* Cake Base */}
-                                <path d="M40,120 Q40,140 100,140 Q160,140 160,120 L160,90 Q160,110 100,110 Q40,110 40,90 Z" fill="#fbcfe8" />
-                                <path d="M40,90 Q40,110 100,110 Q160,110 160,90 L160,60 Q160,80 100,80 Q40,80 40,60 Z" fill="#f472b6" />
-                                
-                                {/* Frosting */}
-                                <path d="M40,60 Q55,75 70,60 Q85,75 100,60 Q115,75 130,60 Q145,75 160,60 L160,120 Q160,140 100,140 Q40,140 40,120 Z" fill="#ec4899" />
+                            <div className={`relative ${isPlaying ? 'animate-spin-slow' : ''}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-400">
+                                    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                                </svg>
+                            </div>
+                            {!isPlaying && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-full h-0.5 bg-white/70 rotate-45"></div>
+                                </div>
+                            )}
+                        </button>
+                    )}
 
-                                {/* Candle */}
-                                <rect x="95" y="30" width="10" height="35" fill="#fde047" rx="2" />
-                                <rect x="95" y="35" width="10" height="5" fill="#ef4444" opacity="0.5" />
-
-                                {/* Flame (Conditional) */}
-                                {!candlesBlown && (
-                                    <g className="flame">
-                                        <path d="M100,30 Q105,30 105,20 Q100,5 95,20 Q95,30 100,30" fill="#fbbf24" />
-                                        <path d="M100,28 Q103,28 103,22 Q100,10 97,22 Q97,28 100,28" fill="#f59e0b" />
-                                    </g>
-                                )}
-                                
-                                {/* Smoke (Conditional) */}
-                                {candlesBlown && (
-                                    <g className="smoke">
-                                        <path d="M100,25 Q110,15 100,5" stroke="#cbd5e1" strokeWidth="2" fill="none" />
-                                        <path d="M98,25 Q88,15 98,5" stroke="#cbd5e1" strokeWidth="2" fill="none" />
-                                    </g>
-                                )}
-                            </svg>
-                        </div>
-                    </section>
-
-                    {/* Love Notes Carousel */}
-                    <section className="relative z-10 max-w-2xl mx-auto my-12 px-6">
-                        <div className="bg-white/90 backdrop-blur text-slate-800 p-8 rounded-lg shadow-2xl transform rotate-1 transition-all hover:rotate-0 min-h-[200px] flex flex-col justify-center items-center text-center relative">
-                            {/* Pin */}
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-500 shadow-md"></div>
-                            
-                            <h3 className="text-xl font-bold mb-4 text-pink-600">给最爱的你</h3>
-                            <p className="text-xl md:text-2xl handwriting leading-loose">
-                                "{loveNotes[currentNote]}"
-                            </p>
-                            
-                            <div className="flex gap-4 mt-8">
-                                <button 
-                                    onClick={() => setCurrentNote(prev => (prev === 0 ? loveNotes.length - 1 : prev - 1))}
-                                    className="p-2 rounded-full hover:bg-pink-100 transition-colors"
-                                >
-                                    ←
-                                </button>
-                                <button 
-                                    onClick={() => setCurrentNote(prev => (prev === loveNotes.length - 1 ? 0 : prev + 1))}
-                                    className="p-2 rounded-full hover:bg-pink-100 transition-colors"
-                                >
-                                    →
-                                </button>
+                    {/* Intro Screen */}
+                    {step === 0 && (
+                        <div className="min-h-screen flex flex-col items-center justify-center relative">
+                            <StarField />
+                            <div className="z-10 text-center cursor-pointer transform hover:scale-105 transition-transform" onClick={handleEnter}>
+                                <div className="text-pink-500 animate-heartbeat text-9xl mb-8 drop-shadow-[0_0_15px_rgba(236,72,153,0.8)]">
+                                    ❤
+                                </div>
+                                <p className="text-xl md:text-2xl handwriting opacity-80 animate-pulse">
+                                    点击爱心，开启专属你的宇宙
+                                </p>
+                                <p className="text-sm text-slate-500 mt-4">(背景音乐将随之播放)</p>
                             </div>
                         </div>
-                    </section>
+                    )}
 
-                    {/* Footer / Music Player Suggestion (Visual) */}
-                    <footer className="relative z-10 pb-10 text-center text-slate-400 text-sm">
-                        <div className="flex justify-center items-center gap-2 mb-4 animate-pulse">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-music"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                            <span>Playing: Our Song.mp3</span>
+                    {/* Main Content */}
+                    {step === 1 && (
+                        <div className="h-screen w-full overflow-y-auto overflow-x-hidden bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 relative">
+                            <StarField />
+                            <Confetti active={showConfetti} />
+
+                            {/* Header */}
+                            <header className="relative z-10 pt-20 pb-10 text-center px-4">
+                                <h1 className="text-5xl md:text-7xl handwriting text-pink-300 mb-4 animate-float drop-shadow-lg">
+                                    亲爱的老婆，生日快乐
+                                </h1>
+                                <p className="text-slate-300 text-lg md:text-xl font-light">
+                                    To the love of my life & the mother of our angel
+                                </p>
+                            </header>
+
+                            {/* Time Together */}
+                            <section className="relative z-10 max-w-4xl mx-auto my-12 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 text-center mx-4 md:mx-auto">
+                                <h2 className="text-2xl md:text-3xl mb-8 text-pink-200 handwriting">我们相识相知的时间</h2>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {[
+                                        { label: "天", val: timeTogether.days },
+                                        { label: "小时", val: timeTogether.hours },
+                                        { label: "分钟", val: timeTogether.minutes },
+                                        { label: "秒", val: timeTogether.seconds }
+                                    ].map((item, idx) => (
+                                        <div key={idx} className="bg-white/10 p-4 rounded-xl">
+                                            <div className="text-3xl md:text-5xl font-bold text-pink-400 font-mono">
+                                                {item.val}
+                                            </div>
+                                            <div className="text-sm text-slate-400 mt-2">{item.label}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Milestones Timeline */}
+                            <section className="relative z-10 max-w-6xl mx-auto my-12 px-6">
+                                <h2 className="text-2xl md:text-3xl mb-8 text-pink-200 handwriting text-center">我们的幸福足迹</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {[
+                                        { date: "2014.10.02", title: "初次相遇", icon: "💘", desc: "故事的开始" },
+                                        { date: "2015.09.09", title: "执子之手", icon: "💍", desc: "领证纪念日" },
+                                        { date: "2016.10.05", title: "浪漫婚礼", icon: "💒", desc: "许下终身誓言" },
+                                        { date: "2020.01.28", title: "天使降临", icon: "👶", desc: "可爱的女儿出生" }
+                                    ].map((m, i) => (
+                                        <div key={i} className="bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/5 text-center hover:bg-white/20 transition-all hover:-translate-y-2 duration-300 group">
+                                            <div className="text-4xl mb-3 transform group-hover:scale-110 transition-transform">{m.icon}</div>
+                                            <h3 className="text-xl font-bold text-pink-300 mb-1">{m.title}</h3>
+                                            <div className="text-slate-300 font-mono text-sm mb-2">{m.date}</div>
+                                            <p className="text-slate-400 text-sm handwriting">{m.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Interactive Cake */}
+                            <section className="relative z-10 my-20 text-center">
+                                <h2 className="text-2xl md:text-3xl mb-8 text-pink-200 handwriting">
+                                    {candlesBlown ? "愿望一定会实现！" : "点此吹灭蜡烛许愿"}
+                                </h2>
+                                
+                                <div 
+                                    className="relative inline-block cursor-pointer transition-transform hover:scale-105"
+                                    onClick={handleBlowCandles}
+                                >
+                                    {/* Cake SVG */}
+                                    <svg width="300" height="300" viewBox="0 0 200 200">
+                                        <ellipse cx="100" cy="170" rx="80" ry="20" fill="#e2e8f0" />
+                                        <path d="M40,120 Q40,140 100,140 Q160,140 160,120 L160,90 Q160,110 100,110 Q40,110 40,90 Z" fill="#fbcfe8" />
+                                        <path d="M40,90 Q40,110 100,110 Q160,110 160,90 L160,60 Q160,80 100,80 Q40,80 40,60 Z" fill="#f472b6" />
+                                        <path d="M40,60 Q55,75 70,60 Q85,75 100,60 Q115,75 130,60 Q145,75 160,60 L160,120 Q160,140 100,140 Q40,140 40,120 Z" fill="#ec4899" />
+                                        <rect x="95" y="30" width="10" height="35" fill="#fde047" rx="2" />
+                                        <rect x="95" y="35" width="10" height="5" fill="#ef4444" opacity="0.5" />
+                                        {!candlesBlown && (
+                                            <g className="flame">
+                                                <path d="M100,30 Q105,30 105,20 Q100,5 95,20 Q95,30 100,30" fill="#fbbf24" />
+                                                <path d="M100,28 Q103,28 103,22 Q100,10 97,22 Q97,28 100,28" fill="#f59e0b" />
+                                            </g>
+                                        )}
+                                        {candlesBlown && (
+                                            <g className="smoke">
+                                                <path d="M100,25 Q110,15 100,5" stroke="#cbd5e1" strokeWidth="2" fill="none" />
+                                                <path d="M98,25 Q88,15 98,5" stroke="#cbd5e1" strokeWidth="2" fill="none" />
+                                            </g>
+                                        )}
+                                    </svg>
+                                </div>
+                            </section>
+
+                            {/* Love Notes Carousel */}
+                            <section className="relative z-10 max-w-2xl mx-auto my-12 px-6 pb-20">
+                                <div className="bg-white/90 backdrop-blur text-slate-800 p-8 rounded-lg shadow-2xl transform rotate-1 transition-all hover:rotate-0 min-h-[200px] flex flex-col justify-center items-center text-center relative">
+                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-500 shadow-md"></div>
+                                    <h3 className="text-xl font-bold mb-4 text-pink-600">给最爱的你</h3>
+                                    <p className="text-xl md:text-2xl handwriting leading-loose">
+                                        "{loveNotes[currentNote]}"
+                                    </p>
+                                    <div className="flex gap-4 mt-8">
+                                        <button 
+                                            onClick={() => setCurrentNote(prev => (prev === 0 ? loveNotes.length - 1 : prev - 1))}
+                                            className="p-2 rounded-full hover:bg-pink-100 transition-colors"
+                                        >
+                                            ←
+                                        </button>
+                                        <button 
+                                            onClick={() => setCurrentNote(prev => (prev === loveNotes.length - 1 ? 0 : prev + 1))}
+                                            className="p-2 rounded-full hover:bg-pink-100 transition-colors"
+                                        >
+                                            →
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
-                        <p>Forever & Always</p>
-                    </footer>
+                    )}
                 </div>
             );
         };
