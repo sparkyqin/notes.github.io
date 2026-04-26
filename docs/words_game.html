@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小朋友英语单词挑战赛</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background-color: #e0f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            border: 5px solid #ffb74d;
+        }
+
+        h1 {
+            color: #ff9800;
+            font-size: 24px;
+            margin-top: 0;
+        }
+
+        .score-board {
+            font-size: 18px;
+            color: #4caf50;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .emoji-display {
+            font-size: 80px;
+            margin: 10px 0;
+            line-height: 1;
+        }
+
+        .chinese-hint {
+            font-size: 24px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        button.option-btn {
+            background-color: #29b6f6;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 5px #0288d1;
+            transition: all 0.1s;
+        }
+
+        button.option-btn:active {
+            box-shadow: 0 0px #0288d1;
+            transform: translateY(5px);
+        }
+
+        button.option-btn:hover {
+            background-color: #03a9f4;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            height: 30px;
+        }
+
+        /* 动画效果 */
+        .bounce {
+            animation: bounce 0.5s ease;
+        }
+
+        .shake {
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>🌟 英语单词小达人 🌟</h1>
+        <div class="score-board">得分: <span id="score">0</span> ⭐️</div>
+        
+        <div class="emoji-display" id="emoji">🍎</div>
+        <div class="chinese-hint" id="chinese">苹果</div>
+        
+        <div class="options" id="options">
+            </div>
+
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        // 扩展版游戏词库 (50个常用基础单词)
+        const wordList = [
+            // 🍎 水果与食物 (Fruits & Food)
+            { english: "apple", chinese: "苹果", emoji: "🍎" },
+            { english: "banana", chinese: "香蕉", emoji: "🍌" },
+            { english: "orange", chinese: "橘子", emoji: "🍊" },
+            { english: "grape", chinese: "葡萄", emoji: "🍇" },
+            { english: "strawberry", chinese: "草莓", emoji: "🍓" },
+            { english: "watermelon", chinese: "西瓜", emoji: "🍉" },
+            { english: "cake", chinese: "蛋糕", emoji: "🍰" },
+            { english: "milk", chinese: "牛奶", emoji: "🥛" },
+            { english: "bread", chinese: "面包", emoji: "🍞" },
+            { english: "ice cream", chinese: "冰淇淋", emoji: "🍦" },
+
+            // 🐶 动物朋友 (Animals)
+            { english: "dog", chinese: "小狗", emoji: "🐶" },
+            { english: "cat", chinese: "小猫", emoji: "🐱" },
+            { english: "pig", chinese: "小猪", emoji: "🐷" },
+            { english: "bird", chinese: "小鸟", emoji: "🐦" },
+            { english: "fish", chinese: "小鱼", emoji: "🐟" },
+            { english: "rabbit", chinese: "兔子", emoji: "🐰" },
+            { english: "monkey", chinese: "猴子", emoji: "🐒" },
+            { english: "elephant", chinese: "大象", emoji: "🐘" },
+            { english: "lion", chinese: "狮子", emoji: "🦁" },
+            { english: "tiger", chinese: "老虎", emoji: "🐯" },
+            { english: "cow", chinese: "奶牛", emoji: "🐮" },
+            { english: "horse", chinese: "马", emoji: "🐴" },
+            { english: "sheep", chinese: "绵羊", emoji: "🐑" },
+            { english: "chicken", chinese: "小鸡", emoji: "🐔" },
+            { english: "bear", chinese: "熊", emoji: "🐻" },
+
+            // 🚗 交通工具 (Vehicles)
+            { english: "car", chinese: "汽车", emoji: "🚗" },
+            { english: "bus", chinese: "公交车", emoji: "🚌" },
+            { english: "train", chinese: "火车", emoji: "🚆" },
+            { english: "airplane", chinese: "飞机", emoji: "✈️" },
+            { english: "ship", chinese: "轮船", emoji: "🚢" },
+            { english: "bicycle", chinese: "自行车", emoji: "🚲" },
+            { english: "rocket", chinese: "火箭", emoji: "🚀" },
+
+            // 🌳 自然与天气 (Nature & Weather)
+            { english: "sun", chinese: "太阳", emoji: "☀️" },
+            { english: "moon", chinese: "月亮", emoji: "🌙" },
+            { english: "star", chinese: "星星", emoji: "⭐" },
+            { english: "tree", chinese: "树木", emoji: "🌳" },
+            { english: "flower", chinese: "花朵", emoji: "🌸" },
+            { english: "grass", chinese: "小草", emoji: "🌿" },
+            { english: "cloud", chinese: "云朵", emoji: "☁️" },
+            { english: "rain", chinese: "下雨", emoji: "🌧️" },
+            { english: "snow", chinese: "下雪", emoji: "❄️" },
+            { english: "fire", chinese: "火", emoji: "🔥" },
+            { english: "water", chinese: "水", emoji: "💧" },
+
+            // 🧸 日常物品与玩具 (Objects & Toys)
+            { english: "book", chinese: "书本", emoji: "📖" },
+            { english: "pen", chinese: "钢笔", emoji: "🖊️" },
+            { english: "ball", chinese: "球", emoji: "⚽" },
+            { english: "balloon", chinese: "气球", emoji: "🎈" },
+            { english: "gift", chinese: "礼物", emoji: "🎁" },
+            { english: "robot", chinese: "机器人", emoji: "🤖" },
+            { english: "clock", chinese: "时钟", emoji: "⏰" }
+        ];
+
+        let currentWord = {};
+        let score = 0;
+
+        const emojiEl = document.getElementById("emoji");
+        const chineseEl = document.getElementById("chinese");
+        const optionsEl = document.getElementById("options");
+        const feedbackEl = document.getElementById("feedback");
+        const scoreEl = document.getElementById("score");
+
+        // 随机打乱数组的函数
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        // 加载新题目
+        function loadNextQuestion() {
+            // 清理反馈区和动画
+            feedbackEl.innerText = "";
+            emojiEl.classList.remove("bounce", "shake");
+            optionsEl.innerHTML = "";
+
+            // 1. 随机选一个正确的单词
+            currentWord = wordList[Math.floor(Math.random() * wordList.length)];
+            
+            // 2. 更新显示
+            emojiEl.innerText = currentWord.emoji;
+            chineseEl.innerText = currentWord.chinese;
+
+            // 3. 生成选项（1个正确 + 2个错误）
+            let options = [currentWord.english];
+            while (options.length < 3) {
+                let randomWord = wordList[Math.floor(Math.random() * wordList.length)].english;
+                // 确保选项不重复
+                if (!options.includes(randomWord)) {
+                    options.push(randomWord);
+                }
+            }
+
+            // 4. 打乱选项顺序
+            options = shuffle(options);
+
+            // 5. 创建按钮
+            options.forEach(option => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = option;
+                btn.onclick = () => checkAnswer(option);
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        // 检查答案
+        function checkAnswer(selectedOption) {
+            // 移除可能存在的动画，以便重新触发
+            emojiEl.classList.remove("bounce", "shake");
+            // 触发回流 (reflow) 保证动画能重新播放
+            void emojiEl.offsetWidth; 
+
+            if (selectedOption === currentWord.english) {
+                // 答对了
+                feedbackEl.style.color = "#4caf50";
+                feedbackEl.innerText = "🎉 答对啦！太棒了！";
+                emojiEl.classList.add("bounce");
+                score += 10;
+                scoreEl.innerText = score;
+                
+                // 禁用所有按钮防止重复点击
+                const btns = document.querySelectorAll(".option-btn");
+                btns.forEach(btn => btn.disabled = true);
+
+                // 1.5秒后进入下一题
+                setTimeout(loadNextQuestion, 1500);
+            } else {
+                // 答错了
+                feedbackEl.style.color = "#f44336";
+                feedbackEl.innerText = "❌ 猜错啦，再试一次吧！";
+                emojiEl.classList.add("shake");
+            }
+        }
+
+        // 初始化游戏
+        loadNextQuestion();
+    </script>
+</body>
+</html>
