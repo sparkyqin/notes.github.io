@@ -5,58 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>阳光小学生的一天 - 校园生活与温馨小家</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #9fd6ff; font-family: "Microsoft YaHei", sans-serif; }
-  #app { width: 100vw; height: 100vh; display: block; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+    background: #9fd6ff; font-family: "Microsoft YaHei", -apple-system, sans-serif;
+    touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+  }
+  #app { width: 100vw; height: 100vh; display: block; touch-action: none; }
+  
+  /* 顶部 UI */
   #ui {
     position: fixed; left: 0; top: 0; right: 0; z-index: 20;
     pointer-events: none; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.8);
   }
   #topbar {
     display: flex; justify-content: space-between; align-items: flex-start;
-    padding: 10px 16px; font-size: 14px;
+    padding: 10px 14px; font-size: 14px;
   }
-  #info { background: rgba(0,0,0,0.55); padding: 8px 16px; border-radius: 12px; line-height: 1.6; }
+  #info { background: rgba(0,0,0,0.6); padding: 8px 14px; border-radius: 12px; line-height: 1.5; pointer-events: auto; }
   #info #period { color: #ffd966; font-weight: bold; font-size: 16px; }
   #info #clock { font-family: monospace; font-size: 16px; margin: 0 6px; }
   #info #day { color: #a5d6ff; }
   #questHint {
-    margin-top: 4px; font-size: 13px; color: #fff; background: rgba(25,118,210,0.7);
-    padding: 3px 10px; border-radius: 6px; display: inline-block;
+    margin-top: 5px; font-size: 13px; color: #fff; background: rgba(25,118,210,0.8);
+    padding: 4px 10px; border-radius: 8px; display: inline-block; font-weight: bold;
   }
   #stats {
-    display: flex; gap: 12px; background: rgba(0,0,0,0.55);
-    padding: 8px 14px; border-radius: 12px; line-height: 1.4;
+    display: flex; gap: 10px; background: rgba(0,0,0,0.6);
+    padding: 8px 12px; border-radius: 12px; line-height: 1.4;
   }
-  .stat { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .stat { display: flex; align-items: center; gap: 5px; font-size: 12px; }
   .stat i { font-style: normal; width: 26px; }
   .stat .bar {
-    width: 80px; height: 8px; background: rgba(255,255,255,0.18);
+    width: 65px; height: 8px; background: rgba(255,255,255,0.2);
     border-radius: 4px; overflow: hidden;
   }
   .stat .bar > div { height: 100%; border-radius: 4px; transition: width 0.3s; }
-  .stat em { font-style: normal; font-family: monospace; font-size: 12px; min-width: 22px; text-align: right; }
+  .stat em { font-style: normal; font-family: monospace; font-size: 12px; min-width: 20px; text-align: right; }
   #st-grades { background: #64b5f6; }
   #st-energy { background: #81c784; }
   #st-mood   { background: #ffd54f; }
   #st-know   { background: #ba68c8; }
   #bball {
-    background: rgba(0,0,0,0.55); padding: 8px 14px; border-radius: 12px;
-    font-size: 14px; display: none; margin-top: 8px;
+    background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 12px;
+    font-size: 13px; display: none; margin-top: 6px; text-align: right;
   }
-  #bball b { color: #ffd966; font-family: monospace; font-size: 18px; }
-  #help {
-    position: fixed; left: 12px; bottom: 12px; z-index: 20;
-    background: rgba(0,0,0,0.55); color: #fff; padding: 10px 14px; border-radius: 10px;
-    font-size: 12px; line-height: 1.7; pointer-events: none; max-width: 380px;
-  }
-  #help kbd {
-    background: #fff; color: #222; border-radius: 4px; padding: 1px 6px;
-    font: 11px/1.5 monospace; box-shadow: 0 1px 0 #999;
-  }
+  #bball b { color: #ffd966; font-family: monospace; font-size: 16px; }
+
+  /* 提示与交互气泡 */
   #prompt {
-    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 20;
-    background: rgba(0,0,0,0.75); color: #fff; padding: 9px 22px; border-radius: 22px;
-    font-size: 15px; display: none; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 25;
+    background: rgba(20,20,35,0.88); color: #fff; padding: 10px 22px; border-radius: 24px;
+    font-size: 15px; display: none; pointer-events: auto; cursor: pointer;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.45); border: 2px solid #ffd966; text-align: center;
   }
   #prompt b { color: #ffd966; }
   #crosshair {
@@ -66,153 +66,124 @@
   }
   #lockhint {
     position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); z-index: 30;
-    background: rgba(0,0,0,0.7); color:#fff; padding: 14px 24px; border-radius: 12px;
+    background: rgba(0,0,0,0.75); color:#fff; padding: 14px 24px; border-radius: 12px;
     font-size: 14px; text-align:center; pointer-events: none; display:none;
   }
-  #lockhint b{color:#ffd966;}
+  #help {
+    position: fixed; left: 12px; bottom: 12px; z-index: 15;
+    background: rgba(0,0,0,0.55); color: #fff; padding: 8px 12px; border-radius: 10px;
+    font-size: 12px; line-height: 1.6; pointer-events: none; max-width: 340px;
+  }
+  #help kbd { background: #fff; color: #222; border-radius: 4px; padding: 1px 5px; font-family: monospace; }
   #fade {
     position: fixed; left: 0; top: 0; width: 100%; height: 100%;
-    background: #000; opacity: 0; z-index: 50; pointer-events: none;
-    transition: opacity 0.4s ease;
+    background: #000; opacity: 0; z-index: 50; pointer-events: none; transition: opacity 0.4s ease;
   }
   #rideOverlay {
-    position: fixed; left: 50%; top: 40%; transform: translate(-50%,-50%);
-    z-index: 48; font-size: 24px; font-weight: bold; color: #ffd966;
-    background: rgba(0,0,0,0.8); padding: 16px 36px; border-radius: 18px;
-    display: none; pointer-events: none; text-align: center; line-height: 1.6;
+    position: fixed; left: 50%; top: 45%; transform: translate(-50%,-50%);
+    z-index: 52; font-size: 22px; font-weight: bold; color: #ffd966;
+    background: rgba(0,0,0,0.85); padding: 18px 32px; border-radius: 18px;
+    display: none; pointer-events: none; text-align: center; line-height: 1.6; width: 80%; max-width: 440px;
   }
-  #friends {
-    position: fixed; right: 12px; bottom: 12px; z-index: 20;
-    background: rgba(0,0,0,0.55); color: #fff; padding: 8px 12px; border-radius: 10px;
-    font-size: 12px; line-height: 1.6; pointer-events: none; display: none;
-  }
-  #friends b { color: #ffd966; }
-  #friends .fbar {
-    display: inline-block; width: 50px; height: 6px; background: rgba(255,255,255,0.18);
-    border-radius: 3px; overflow: hidden; vertical-align: middle; margin: 0 4px;
-  }
-  #friends .fbar > div { height: 100%; background: #ffb74d; border-radius: 3px; }
-  #chat {
-    position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 25;
-    background: rgba(20,20,30,0.95); color: #fff; padding: 0; border-radius: 14px;
-    font-size: 14px; width: 460px; max-width: 92vw; display: none;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden;
-  }
-  #chatHead {
-    padding: 10px 16px; background: rgba(255,255,255,0.08);
-    font-weight: bold; font-size: 15px; display: flex; justify-content: space-between; align-items: center;
-  }
-  #chatHead .fri { font-size: 12px; color: #ffb74d; font-weight: normal; }
-  #chatBody { padding: 14px 16px; line-height: 1.6; min-height: 48px; }
-  #chatBody .npc-line { color: #e3f2fd; margin-bottom: 10px; }
-  #chatBody .me-line { color: #c8e6c9; margin-bottom: 10px; text-align: right; }
-  #chatOpts { padding: 0 16px 12px; }
-  #chatOpts button {
-    display: block; width: 100%; margin-top: 6px; padding: 9px 12px;
-    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 8px; font-size: 13px; cursor: pointer; text-align: left;
-    transition: background 0.15s;
-  }
-  #chatOpts button:hover { background: rgba(255,255,255,0.25); }
-  
+
   /* 答题面板 */
   #quiz {
     position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 45;
-    background: rgba(30,30,55,0.98); color: #fff; padding: 22px 26px; border-radius: 20px;
-    width: 520px; max-width: 90vw; max-height: 88vh; overflow-y: auto; display: none; box-shadow: 0 12px 48px rgba(0,0,0,0.6);
-    border: 3px solid rgba(255,215,102,0.55); text-align: center;
+    background: rgba(28,32,55,0.98); color: #fff; padding: 20px 24px; border-radius: 20px;
+    width: 480px; max-width: 90vw; max-height: 85vh; overflow-y: auto; display: none; box-shadow: 0 12px 48px rgba(0,0,0,0.7);
+    border: 3px solid #ffd966; text-align: center;
   }
-  #quizHead {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: 17px; font-weight: bold; color: #ffd966; margin-bottom: 4px;
-  }
-  #quizTitle { font-size: 22px; }
-  #quizProgress { font-size: 15px; color: #a5d6ff; }
+  #quizHead { display: flex; justify-content: space-between; align-items: center; color: #ffd966; margin-bottom: 6px; }
+  #quizTitle { font-size: 20px; font-weight: bold; }
+  #quizProgress { font-size: 14px; color: #a5d6ff; }
   #quizSpeak {
-    background: #ffd966; color: #333; border: none; border-radius: 999px;
-    padding: 6px 18px; font-size: 14px; cursor: pointer; margin: 8px auto 2px; display: inline-block;
+    background: #ffd966; color: #222; border: none; border-radius: 999px;
+    padding: 6px 18px; font-size: 14px; font-weight: bold; cursor: pointer; margin: 6px auto; display: inline-block;
   }
   #quizQuestion {
-    font-size: 24px; font-weight: bold; line-height: 1.5; margin: 12px 0 12px;
-    min-height: 60px; display: flex; align-items: center; justify-content: center; color: #fff;
+    font-size: 22px; font-weight: bold; line-height: 1.5; margin: 12px 0;
+    min-height: 50px; display: flex; align-items: center; justify-content: center; color: #fff;
   }
-  #quizOpts { display: flex; flex-direction: column; gap: 9px; }
+  #quizOpts { display: flex; flex-direction: column; gap: 10px; }
   #quizOpts button {
-    display: block; width: 100%; padding: 12px 10px; border: none; border-radius: 12px;
-    font-size: 20px; font-weight: bold; color: #fff; cursor: pointer; min-height: 52px;
-    transition: transform 0.1s, opacity 0.2s;
+    display: block; width: 100%; padding: 12px 8px; border: none; border-radius: 12px;
+    font-size: 18px; font-weight: bold; color: #fff; cursor: pointer; min-height: 48px;
   }
-  #quizOpts button:hover { transform: scale(1.02); }
-  #quizOpts .optA { background: #42a5f5; }
-  #quizOpts .optB { background: #66bb6a; }
-  #quizOpts .optC { background: #ffa726; }
-  #quizMsg { font-size: 18px; margin: 10px 0 2px; min-height: 28px; font-weight: bold; }
+  #quizOpts .optA { background: #1e88e5; }
+  #quizOpts .optB { background: #43a047; }
+  #quizOpts .optC { background: #fb8c00; }
+  #quizMsg { font-size: 17px; margin: 8px 0 2px; min-height: 26px; font-weight: bold; }
   #quizQuit {
-    background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 8px; padding: 6px 20px; font-size: 14px; cursor: pointer; margin-top: 10px;
+    background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px; padding: 6px 18px; font-size: 14px; cursor: pointer; margin-top: 8px;
   }
-  
-  /* 接送选择面板 */
+
+  /* 放学接送面板 */
   #pickup {
     position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 44;
-    background: rgba(28,32,48,0.96); color: #fff; padding: 24px; border-radius: 18px;
-    width: 380px; max-width: 90vw; display: none; box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+    background: rgba(25,30,48,0.98); color: #fff; padding: 22px; border-radius: 18px;
+    width: 360px; max-width: 90vw; display: none; box-shadow: 0 12px 48px rgba(0,0,0,0.7);
     border: 2px solid #ffd966; text-align: center;
   }
-  #pickupHead { font-size: 22px; font-weight: bold; color: #ffd966; margin-bottom: 8px; }
-  #pickupBody { font-size: 15px; color: #e1f5fe; margin-bottom: 18px; }
-  #pickupOpts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #pickupHead { font-size: 20px; font-weight: bold; color: #ffd966; margin-bottom: 6px; }
+  #pickupBody { font-size: 14px; color: #e1f5fe; margin-bottom: 16px; }
+  #pickupOpts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .pickup-btn {
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 12px; padding: 14px 10px; font-size: 15px; cursor: pointer;
-    color: #fff; display: flex; flex-direction: column; align-items: center; gap: 6px;
-    transition: all 0.2s;
+    border-radius: 12px; padding: 12px 8px; font-size: 14px; cursor: pointer;
+    color: #fff; display: flex; flex-direction: column; align-items: center; gap: 4px;
   }
-  .pickup-btn:hover { background: rgba(255,215,102,0.25); transform: scale(1.04); }
-  .pickup-icon { font-size: 28px; }
+  .pickup-btn:active { background: rgba(255,215,102,0.3); }
+  .pickup-icon { font-size: 26px; }
 
-  /* 书本阅读 */
-  #bookUI {
-    position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 42;
-    background: rgba(252,248,235,0.98); color: #333; padding: 26px 30px; border-radius: 14px;
-    width: 480px; max-width: 88vw; max-height: 80vh; overflow-y: auto; display: none;
-    box-shadow: 0 16px 56px rgba(0,0,0,0.5); border: 2px solid #c8a878; font-family: 'KaiTi', serif;
+  /* 同学聊天 */
+  #chat {
+    position: fixed; left: 50%; bottom: 35px; transform: translateX(-50%); z-index: 40;
+    background: rgba(20,22,35,0.96); color: #fff; padding: 0; border-radius: 14px;
+    font-size: 14px; width: 440px; max-width: 92vw; display: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6); overflow: hidden; border: 1px solid rgba(255,255,255,0.2);
   }
-  #bookTitle { font-size: 22px; font-weight: bold; color: #5d4037; text-align: center; margin-bottom: 4px; }
-  #bookAuthor { font-size: 13px; color: #888; text-align: center; margin-bottom: 14px; font-style: italic; }
-  #bookContent { font-size: 16px; line-height: 1.8; text-indent: 2em; color: #3e2723; text-align: justify; }
-  #bookClose {
-    display: block; margin: 18px auto 0; background: #5d4037; color: #fff; border: none;
-    border-radius: 6px; padding: 8px 24px; font-size: 14px; cursor: pointer;
+  #chatHead { padding: 10px 14px; background: rgba(255,255,255,0.1); font-weight: bold; display: flex; justify-content: space-between; }
+  #chatFri { font-size: 12px; color: #ffb74d; }
+  #chatBody { padding: 12px 14px; line-height: 1.6; }
+  #chatBody .npc-line { color: #e3f2fd; margin-bottom: 8px; }
+  #chatBody .me-line { color: #c8e6c9; margin-bottom: 8px; text-align: right; }
+  #chatOpts { padding: 0 14px 12px; }
+  #chatOpts button {
+    display: block; width: 100%; margin-top: 6px; padding: 8px 10px;
+    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px; font-size: 13px; cursor: pointer; text-align: left;
   }
 
-  /* 触屏控制 */
-  #touchUI { position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 18; display: none; pointer-events: none; }
-  #touchUI.active { display: block; }
+  /* 触屏交互层 (针对 Pad / 手机优化) */
+  #touchUI { position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 18; display: block; pointer-events: none; }
+  #joyZone { position: absolute; left: 0; bottom: 0; width: 45%; height: 60%; pointer-events: auto; touch-action: none; }
   #joyBase {
-    position: absolute; left: 40px; bottom: 50px; width: 120px; height: 120px; border-radius: 50%;
-    background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.3); pointer-events: auto; touch-action: none;
+    position: absolute; left: 40px; bottom: 40px; width: 130px; height: 130px; border-radius: 50%;
+    background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.35); touch-action: none;
   }
   #joyKnob {
-    position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px;
-    border-radius: 50%; background: rgba(255,255,255,0.5); pointer-events: none;
+    position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px;
+    border-radius: 50%; background: rgba(255,255,255,0.55); pointer-events: none;
   }
   #lookZone { position: absolute; right: 0; top: 0; width: 55%; height: 100%; pointer-events: auto; touch-action: none; }
-  #touchBtns { position: absolute; right: 16px; bottom: 120px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+  #touchBtns { position: absolute; right: 20px; bottom: 90px; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
   .tbtn {
-    width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.35);
-    background: rgba(0,0,0,0.55); color: #fff; font-size: 13px; line-height: 1.15;
+    width: 66px; height: 66px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.4);
+    background: rgba(0,0,0,0.6); color: #fff; font-size: 13px; line-height: 1.15;
     pointer-events: auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
-  .tbtn-primary { width: 76px; height: 76px; font-size: 15px; background: rgba(255,215,102,0.25); border: 2px solid #ffd966; }
+  .tbtn:active { background: rgba(255,255,255,0.3); transform: scale(0.95); }
+  .tbtn-primary { width: 80px; height: 80px; font-size: 15px; font-weight: bold; background: rgba(255,215,102,0.3); border: 2px solid #ffd966; }
 </style>
 </head>
 <body>
 <div id="ui">
   <div id="topbar">
     <div id="info">
-      <div><span id="period">早读</span><span id="clock">07:00</span><span id="day">第1天</span></div>
-      <div id="questHint">📍 目标：请前往主教学楼 1F 教室自己的座位早读</div>
+      <div><span id="period">早读课</span><span id="clock">07:00</span><span id="day">第1天</span></div>
+      <div id="questHint">📍 目标：请前往 1F 教室自己的座位早读</div>
     </div>
     <div>
       <div id="stats">
@@ -230,11 +201,10 @@
 <div id="prompt"></div>
 <div id="lockhint"><b>点击画面</b>开始操控　·　按 <b>Esc</b> 释放鼠标</div>
 <div id="help">
-  <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动　<kbd>Shift</kbd> 跑　鼠标转视角<br>
-  <kbd>E</kbd> 交互 / 学习 / 聊天 / 做家务　<kbd>Space</kbd> 跳跃<br>
-  <kbd>Q</kbd> 时间快进(×8)　<kbd>R</kbd> 重置位置　顺着<b>光柱导航</b>可前往目的地
+  <b>操作指南</b>：<br>
+  • 触屏/Pad：左侧拖动摇杆移动，右侧滑动转视角，右下角点按钮<br>
+  • 电脑键盘：<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动，<kbd>E</kbd> 交互/学习，<kbd>Q</kbd> 快进
 </div>
-<div id="friends"></div>
 <div id="chat">
   <div id="chatHead"><span id="chatName"></span><span id="chatFri" class="fri"></span></div>
   <div id="chatBody"></div>
@@ -245,38 +215,34 @@
     <span id="quizTitle"></span>
     <span id="quizProgress"></span>
   </div>
-  <button id="quizSpeak" type="button">🔊 听题/读课文</button>
+  <button id="quizSpeak" type="button">🔊 朗读课文/题目</button>
   <div id="quizQuestion"></div>
   <div id="quizOpts"></div>
   <div id="quizMsg"></div>
-  <button id="quizQuit" type="button">完成/离开</button>
-</div>
-<div id="bookUI">
-  <div id="bookTitle"></div>
-  <div id="bookAuthor"></div>
-  <div id="bookContent"></div>
-  <button id="bookClose">合上书本</button>
+  <button id="quizQuit" type="button">完成/关闭</button>
 </div>
 <div id="pickup">
   <div id="pickupHead">👨 爸爸来接你放学啦！</div>
-  <div id="pickupBody">“今天在学校学到了什么？我们选个方式回家吧！”</div>
+  <div id="pickupBody">“今天学到了不少新知识吧！选个交通方式一起回家吧！”</div>
   <div id="pickupOpts">
     <button class="pickup-btn" data-mode="walk"><span class="pickup-icon">🚶</span>走路回家<small>聊天散步</small></button>
-    <button class="pickup-btn" data-mode="car"><span class="pickup-icon">🚗</span>爸爸开车<small>快速舒适</small></button>
-    <button class="pickup-btn" data-mode="bus"><span class="pickup-icon">🚌</span>坐公交车<small>欣赏街景</small></button>
-    <button class="pickup-btn" data-mode="subway"><span class="pickup-icon">🚇</span>乘地铁<small>准时快捷</small></button>
+    <button class="pickup-btn" data-mode="car"><span class="pickup-icon">🚗</span>爸爸开车<small>舒适快速</small></button>
+    <button class="pickup-btn" data-mode="bus"><span class="pickup-icon">🚌</span>乘公交车<small>欣赏街景</small></button>
+    <button class="pickup-btn" data-mode="subway"><span class="pickup-icon">🚇</span>坐地铁<small>准时快捷</small></button>
   </div>
 </div>
 <div id="rideOverlay"></div>
 <div id="fade"></div>
 
-<!-- 触屏控制 -->
+<!-- 触屏虚拟摇杆与功能按键 -->
 <div id="touchUI">
-  <div id="joyBase"><div id="joyKnob"></div></div>
+  <div id="joyZone">
+    <div id="joyBase"><div id="joyKnob"></div></div>
+  </div>
   <div id="lookZone"></div>
   <div id="touchBtns">
     <button id="tBtnInteract" class="tbtn tbtn-primary" type="button">👋<br>交互</button>
-    <button id="tBtnJump" class="tbtn tbtn-primary" type="button">🏀<br>跳/投</button>
+    <button id="tBtnJump" class="tbtn tbtn-primary" type="button">🦘<br>跳跃</button>
     <button id="tBtnFF" class="tbtn" type="button">⏩<br>快进</button>
     <button id="tBtnReset" class="tbtn" type="button">🔄<br>重置</button>
   </div>
@@ -294,10 +260,10 @@
 import * as THREE from 'three';
 
 /* ============================================================
-   渲染器 / 场景 / 相机
+   渲染器与场景
 ============================================================ */
 const canvas = document.getElementById('app');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
@@ -305,19 +271,18 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9fd6ff);
-scene.fog = new THREE.Fog(0x9fd6ff, 200, 500);
+scene.fog = new THREE.Fog(0x9fd6ff, 180, 480);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1600);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1500);
 
 const hemi = new THREE.HemisphereLight(0xcfeaff, 0x6b8f3a, 0.85);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2d6, 1.15);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.near = 10;
-sun.shadow.camera.far = 480;
-sun.shadow.camera.left = -140; sun.shadow.camera.right = 140;
-sun.shadow.camera.top = 140;  sun.shadow.camera.bottom = -140;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.near = 10; sun.shadow.camera.far = 420;
+sun.shadow.camera.left = -120; sun.shadow.camera.right = 120;
+sun.shadow.camera.top = 120;  sun.shadow.camera.bottom = -120;
 scene.add(sun);
 scene.add(sun.target);
 
@@ -325,51 +290,32 @@ scene.add(sun.target);
    纹理生成工具
 ============================================================ */
 function makeGroundTexture(base, dotFn) {
-  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const c = document.createElement('canvas'); c.width = c.height = 128;
   const x = c.getContext('2d');
-  x.fillStyle = base; x.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 2000; i++) {
+  x.fillStyle = base; x.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 600; i++) {
     x.fillStyle = dotFn(Math.floor(Math.random() * 80));
-    x.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+    x.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return t;
 }
-function makeWallTexture(baseColor, winColor = '#bfe3ff') {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 128;
-  const x = c.getContext('2d');
-  x.fillStyle = baseColor; x.fillRect(0, 0, 256, 128);
-  for (let i = 0; i < 3; i++) {
-    x.fillStyle = '#fff'; x.fillRect(20 + i * 80, 25, 55, 75);
-    x.fillStyle = winColor; x.fillRect(23 + i * 80, 28, 49, 69);
-  }
-  const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; return t;
-}
 
 /* ============================================================
-   常量与碰撞体系
+   常量与碰撞
 ============================================================ */
-const CAMPUS_HALF_X = 90, CAMPUS_HALF_Z = 110;
-const GATE_Z = 105;
 const MAIN = { cx: 0, cz: -30, w: 38, d: 24 };
-const LIB  = { cx: -58, cz: -40, w: 20, d: 16 };
-const GYM  = { cx: 60,  cz: -45, w: 26, d: 34 };
-const LAB  = { cx: -58, cz: 0,   w: 18, d: 14 };
+const GATE_Z = 105;
 const CAF  = { cx: -55, cz: 55,  w: 24, d: 20 };
-const DORM = { cx: 40,  cz: 55,  w: 26, d: 14 };
 const COURT= { cx: 62,  cz: 44,  w: 14, d: 24 };
 const FIELD= { cx: 63,  cz: 8,   r: 22 };
-const PLAY = { cx: -30, cz: 42 };
-const FOUNTAIN = { x: 10, z: 40 };
-
-// 温馨小家所在世界坐标（远离校园的静谧街区）
-const HOME = { cx: 280, cz: 280, w: 28, d: 20, h: 6 };
+const HOME = { cx: 260, cz: 260, w: 26, d: 18, h: 5 };
 
 const colliders = [];
 function addCollider(x0, x1, z0, z1) { colliders.push({ x0, x1, z0, z1 }); }
 
-// 校园围墙
+// 校园外墙
 addCollider(-90, 90, -110.5, -109.6);
 addCollider(-90, -12, 109.6, 110.5);
 addCollider(12, 90, 109.6, 110.5);
@@ -406,56 +352,27 @@ function collidePlayer(pos) {
 }
 
 /* ============================================================
-   校园场景与建筑构建
+   校园与教室场景构建
 ============================================================ */
-// 地面与道路
 const grassTex = makeGroundTexture('#6aa84f', g => `rgb(${g-20},${g+60},${g-20})`);
-grassTex.repeat.set(50, 50);
+grassTex.repeat.set(40, 40);
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ map: grassTex, roughness: 1 }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 
-// 广场与主干道
 const plazaTex = makeGroundTexture('#b7a99a', g => `rgb(${g+50},${g+40},${g+30})`);
-plazaTex.repeat.set(10, 10);
+plazaTex.repeat.set(6, 6);
 const plaza = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ map: plazaTex, roughness: 1 }));
 plaza.rotation.x = -Math.PI / 2; plaza.position.set(0, 0.03, 40); plaza.receiveShadow = true; scene.add(plaza);
 
 const mainPath = new THREE.Mesh(new THREE.PlaneGeometry(10, 130), new THREE.MeshStandardMaterial({ map: plazaTex, roughness: 1 }));
 mainPath.rotation.x = -Math.PI / 2; mainPath.position.set(0, 0.04, 45); mainPath.receiveShadow = true; scene.add(mainPath);
 
-// 校门外主干道
-const roadTex = makeGroundTexture('#33373d', g => `rgb(${g+40},${g+40},${g+40})`);
-const road = new THREE.Mesh(new THREE.PlaneGeometry(400, 24), new THREE.MeshStandardMaterial({ map: roadTex, roughness: 0.9 }));
-road.rotation.x = -Math.PI / 2; road.position.set(0, 0.05, 120); road.receiveShadow = true; scene.add(road);
-
-// 斑马线
-for (let i = 0; i < 8; i++) {
-  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-  stripe.rotation.x = -Math.PI / 2; stripe.position.set(-7 + i * 2, 0.06, 120); scene.add(stripe);
-}
-
-// 公交车站牌与地铁站口
-const busStation = new THREE.Group();
-const busPole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4), new THREE.MeshStandardMaterial({ color: 0x555555 }));
-busPole.position.y = 2; busStation.add(busPole);
-const busBoard = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 0.2), new THREE.MeshStandardMaterial({ color: 0x1976d2 }));
-busBoard.position.y = 3.4; busStation.add(busBoard);
-busStation.position.set(22, 0, 114); scene.add(busStation);
-
-const subwayEntry = new THREE.Group();
-const subRoof = new THREE.Mesh(new THREE.BoxGeometry(7, 3, 5), new THREE.MeshStandardMaterial({ color: 0x2e7d32, transparent: true, opacity: 0.8 }));
-subRoof.position.y = 2; subwayEntry.add(subRoof);
-subwayEntry.position.set(-26, 0, 122); scene.add(subwayEntry);
-
-/* ============================================================
-   主教学楼与教室黑板（动态科目板书）
-============================================================ */
+// 主楼与教室
 const buildGroup = new THREE.Group(); scene.add(buildGroup);
 const floorSlab = new THREE.Mesh(new THREE.BoxGeometry(MAIN.w, 0.5, MAIN.d), new THREE.MeshStandardMaterial({ color: 0xe0e0e0 }));
 floorSlab.position.set(MAIN.cx, 0.25, MAIN.cz); buildGroup.add(floorSlab);
 
-// 教室侧墙与背墙
-const sideMat = new THREE.MeshStandardMaterial({ map: makeWallTexture('#e0e0e0', '#bfe3ff'), roughness: 0.8 });
+const sideMat = new THREE.MeshStandardMaterial({ color: 0xd7ccc8, roughness: 0.8 });
 const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 7, MAIN.d), sideMat);
 sideL.position.set(MAIN.cx - MAIN.w/2, 3.5, MAIN.cz); buildGroup.add(sideL);
 const sideR = sideL.clone(); sideR.position.x = MAIN.cx + MAIN.w/2; buildGroup.add(sideR);
@@ -470,42 +387,38 @@ const boardTexture = new THREE.CanvasTexture(boardCanvas);
 
 function updateBlackboard(title, p1, p2, teacher) {
   boardCtx.fillStyle = '#1b4d2e'; boardCtx.fillRect(0, 0, 1024, 256);
-  boardCtx.strokeStyle = '#8d6e63'; boardCtx.lineWidth = 14; boardCtx.strokeRect(0, 0, 1024, 256);
+  boardCtx.strokeStyle = '#8d6e63'; boardCtx.lineWidth = 12; boardCtx.strokeRect(0, 0, 1024, 256);
   boardCtx.fillStyle = '#ffd54f'; boardCtx.font = 'bold 36px "Microsoft YaHei"';
-  boardCtx.fillText('★ ' + title + ' ★', 50, 60);
+  boardCtx.fillText('★ ' + title + ' ★', 40, 60);
   boardCtx.fillStyle = '#ffffff'; boardCtx.font = '30px "KaiTi", "Microsoft YaHei"';
-  boardCtx.fillText(p1, 50, 120);
-  boardCtx.fillText(p2, 50, 170);
+  boardCtx.fillText(p1, 40, 120);
+  boardCtx.fillText(p2, 40, 170);
   boardCtx.fillStyle = '#a5d6ff'; boardCtx.font = '26px "Microsoft YaHei"';
   boardCtx.fillText('执教老师：' + teacher, 720, 220);
   boardTexture.needsUpdate = true;
 }
-updateBlackboard('早读课 - 《咏柳》', '碧玉妆成一树高，万条垂下绿丝绦。', '不知细叶谁裁出，二月春风似剪刀。', '林老师 (语文)');
 
 const blackboard = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), new THREE.MeshStandardMaterial({ map: boardTexture }));
 blackboard.position.set(MAIN.cx, 3.5, MAIN.cz - MAIN.d/2 + 0.3); buildGroup.add(blackboard);
 
-// 讲台与课桌
 const podium = new THREE.Mesh(new THREE.BoxGeometry(3, 1.3, 1.2), new THREE.MeshStandardMaterial({ color: 0x6d4c41 }));
 podium.position.set(MAIN.cx, 0.65, MAIN.cz - MAIN.d/2 + 3.5); buildGroup.add(podium);
 
 function makeDesk(x, z, isPlayer = false) {
   const g = new THREE.Group();
-  const topMat = new THREE.MeshStandardMaterial({ color: isPlayer ? 0xffb74d : 0x8d6e63 });
-  const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.8), topMat);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.8), new THREE.MeshStandardMaterial({ color: isPlayer ? 0xffb74d : 0x8d6e63 }));
   top.position.y = 1.15; g.add(top);
   const book = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.5), new THREE.MeshStandardMaterial({ color: isPlayer ? 0x1e88e5 : 0xe53935 }));
   book.position.set(0.2, 1.22, 0); g.add(book);
-  g.position.set(x, 0, z);
-  return g;
+  g.position.set(x, 0, z); return g;
 }
 const playerDeskPos = new THREE.Vector3(0, 0, -22);
 buildGroup.add(makeDesk(playerDeskPos.x, playerDeskPos.z, true));
 [[-5,-22],[5,-22],[-5,-26],[5,-26],[-5,-30],[5,-30],[0,-26],[0,-30]].forEach(([x,z]) => buildGroup.add(makeDesk(x,z)));
 
-// 导航光环与光柱（引导玩家前往早读/目的地）
+// 导航光环与光柱
 const navMarker = new THREE.Group();
-const navRing = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.2, 32), new THREE.MeshBasicMaterial({ color: 0xffd54f, side: THREE.DoubleSide }));
+const navRing = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.3, 32), new THREE.MeshBasicMaterial({ color: 0xffd54f, side: THREE.DoubleSide }));
 navRing.rotation.x = -Math.PI / 2; navRing.position.y = 0.05; navMarker.add(navRing);
 const navBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 8, 16, 1, true),
   new THREE.MeshBasicMaterial({ color: 0xffd54f, transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
@@ -513,92 +426,67 @@ navBeam.position.y = 4; navMarker.add(navBeam);
 scene.add(navMarker);
 
 /* ============================================================
-   老师 NPC 系统
+   老师与人类模型工厂
 ============================================================ */
-function makeHumanModel(topCol, bottomCol, hairCol = 0x333333, isFemale = false) {
+function makeHumanModel(topCol, bottomCol, hairCol = 0x333333) {
   const g = new THREE.Group();
   const skin = new THREE.MeshStandardMaterial({ color: 0xffd5b0 });
-  const top = new THREE.MeshStandardMaterial({ color: topCol });
-  const bot = new THREE.MeshStandardMaterial({ color: bottomCol });
-  // 头
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), skin);
-  head.position.y = 2.6; g.add(head);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), skin); head.position.y = 2.6; g.add(head);
   const hair = new THREE.Mesh(new THREE.SphereGeometry(0.54, 16, 16, 0, Math.PI*2, 0, Math.PI*0.7), new THREE.MeshStandardMaterial({ color: hairCol }));
   hair.position.set(0, 2.65, -0.02); g.add(hair);
-  // 身体
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 1.0, 12), top);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 1.0, 12), new THREE.MeshStandardMaterial({ color: topCol }));
   torso.position.y = 1.8; g.add(torso);
-  const skirtOrPants = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.4), bot);
-  skirtOrPants.position.y = 1.0; g.add(skirtOrPants);
-  // 腿与手
+  const bot = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.4), new THREE.MeshStandardMaterial({ color: bottomCol }));
+  bot.position.y = 1.0; g.add(bot);
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.8), skin); legL.position.set(-0.2, 0.6, 0); g.add(legL);
+  const legR = legL.clone(); legR.position.x = 0.2; g.add(legR);
   const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8), skin); armL.position.set(-0.55, 1.8, 0); g.add(armL);
   const armR = armL.clone(); armR.position.x = 0.55; g.add(armR);
-  g.userData = { armL, armR };
+  g.userData = { legL, legR, armL, armR };
   return g;
 }
 
 const teacherNPC = makeHumanModel(0x3949ab, 0x263238, 0x212121);
-teacherNPC.position.set(0, 0, MAIN.cz - MAIN.d/2 + 2.5); // 站在讲台前
-teacherNPC.rotation.y = 0; scene.add(teacherNPC);
+teacherNPC.position.set(0, 0, MAIN.cz - MAIN.d/2 + 2.5); scene.add(teacherNPC);
 
 /* ============================================================
-   全新场景：温馨小家（客厅 + 厨房餐厅 + 卧室书房）
+   温馨小家场景（客厅 + 餐厅 + 卧室）
 ============================================================ */
 const homeGroup = new THREE.Group(); homeGroup.position.set(HOME.cx, 0, HOME.cz); scene.add(homeGroup);
-// 地板
-const homeFloorTex = makeGroundTexture('#d7ccc8', g => `rgb(${g+180},${g+160},${g+130})`);
-homeFloorTex.repeat.set(6, 4);
-const homeFloor = new THREE.Mesh(new THREE.BoxGeometry(HOME.w, 0.2, HOME.d), new THREE.MeshStandardMaterial({ map: homeFloorTex }));
+const homeFloor = new THREE.Mesh(new THREE.BoxGeometry(HOME.w, 0.2, HOME.d), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 }));
 homeFloor.position.y = 0.1; homeGroup.add(homeFloor);
 
-// 墙壁
 const homeWallMat = new THREE.MeshStandardMaterial({ color: 0xfff8e1, roughness: 0.9 });
 function homeWall(w, h, d, x, z) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), homeWallMat);
   m.position.set(x, h/2, z); homeGroup.add(m);
 }
-homeWall(HOME.w, 5, 0.4, 0, -HOME.d/2); // 北
-homeWall(0.4, 5, HOME.d, -HOME.w/2, 0); // 西
-homeWall(0.4, 5, HOME.d, HOME.w/2, 0);  // 东
-homeWall(HOME.w/2 - 2, 5, 0.4, -HOME.w/4 - 1, HOME.d/2); // 南左
-homeWall(HOME.w/2 - 2, 5, 0.4, HOME.w/4 + 1, HOME.d/2);  // 南右
+homeWall(HOME.w, 5, 0.4, 0, -HOME.d/2);
+homeWall(0.4, 5, HOME.d, -HOME.w/2, 0);
+homeWall(0.4, 5, HOME.d, HOME.w/2, 0);
+homeWall(HOME.w/2 - 2, 5, 0.4, -HOME.w/4 - 1, HOME.d/2);
+homeWall(HOME.w/2 - 2, 5, 0.4, HOME.w/4 + 1, HOME.d/2);
+homeWall(0.3, 5, 9, -2, -HOME.d/2 + 4.5);
 
-// 隔断墙（分出卧室与客厅）
-homeWall(0.3, 5, 10, -2, -HOME.d/2 + 5);
-
-// 卧室区域：温馨小床与书桌
+// 床、书桌、餐桌、电视沙发
 const bed = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.8, 5), new THREE.MeshStandardMaterial({ color: 0xff80ab }));
-bed.position.set(-8, 0.4, -6); homeGroup.add(bed);
-const pillow = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.3, 1.2), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-pillow.position.set(-8, 0.9, -7.8); homeGroup.add(pillow);
-
+bed.position.set(-8, 0.4, -5.5); homeGroup.add(bed);
 const studyDesk = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 1.5), new THREE.MeshStandardMaterial({ color: 0x8d6e63 }));
 studyDesk.position.set(-8, 0.6, 2); homeGroup.add(studyDesk);
-const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.3, 0.8), new THREE.MeshStandardMaterial({ color: 0xffd54f, emissive: 0xffd54f, emissiveIntensity: 0.8 }));
-lamp.position.set(-7, 1.6, 2); homeGroup.add(lamp);
-
-// 餐厅区域：餐桌与丰盛晚餐
 const diningTable = new THREE.Mesh(new THREE.BoxGeometry(4, 1.2, 2.5), new THREE.MeshStandardMaterial({ color: 0xa1887f }));
 diningTable.position.set(6, 0.6, -4); homeGroup.add(diningTable);
-const foodDish1 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.15), new THREE.MeshStandardMaterial({ color: 0xff7043 }));
-foodDish1.position.set(5.2, 1.3, -4); homeGroup.add(foodDish1);
-const foodDish2 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.15), new THREE.MeshStandardMaterial({ color: 0x66bb6a }));
-foodDish2.position.set(6.8, 1.3, -4); homeGroup.add(foodDish2);
-
-// 客厅区域：沙发、电视机、玩具箱
 const sofa = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1.0, 1.8), new THREE.MeshStandardMaterial({ color: 0x42a5f5 }));
-sofa.position.set(6, 0.5, 5); homeGroup.add(sofa);
-const tv = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.2, 0.3), new THREE.MeshStandardMaterial({ color: 0x212121, emissive: 0x1976d2, emissiveIntensity: 0.3 }));
-tv.position.set(6, 2.2, 8.8); homeGroup.add(tv);
+sofa.position.set(6, 0.5, 4.5); homeGroup.add(sofa);
+const tv = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.0, 0.3), new THREE.MeshStandardMaterial({ color: 0x212121, emissive: 0x1976d2, emissiveIntensity: 0.3 }));
+tv.position.set(6, 2.0, 8.5); homeGroup.add(tv);
 
-// 家长 NPC（在家里的温馨守候）
-const momNPC = makeHumanModel(0xec407a, 0x5c6bc0, 0x4e342e, true);
+const momNPC = makeHumanModel(0xec407a, 0x5c6bc0, 0x4e342e);
 momNPC.position.set(HOME.cx + 6, 0, HOME.cz - 2); momNPC.rotation.y = Math.PI; scene.add(momNPC);
 const dadAtHome = makeHumanModel(0x455a64, 0x263238, 0x212121);
-dadAtHome.position.set(HOME.cx + 4, 0, HOME.cz + 4.5); dadAtHome.rotation.y = 0; scene.add(dadAtHome);
+dadAtHome.position.set(HOME.cx + 4, 0, HOME.cz + 4); scene.add(dadAtHome);
 
 /* ============================================================
-   玩家模型与状态
+   主角模型
 ============================================================ */
 function makeStudent() {
   const g = new THREE.Group();
@@ -623,12 +511,11 @@ girl.position.copy(START_POS);
 scene.add(girl);
 
 /* ============================================================
-   作息时间表（放慢节奏，课程明确细分）
+   作息时间与任务引导
 ============================================================ */
-const DAY_LEN = 480; // 8 分钟一个完整日夜循环
-let dayTime = 0;
-let dayCount = 1;
-function hourNow() { return 7 + (dayTime / DAY_LEN) * 15; } // 07:00 -> 22:00
+const DAY_LEN = 480; // 8分钟一完整天
+let dayTime = 0, dayCount = 1;
+function hourNow() { return 7 + (dayTime / DAY_LEN) * 15; }
 
 function periodAt(h) {
   if (h < 7.6)  return { name: '早读课', type: 'read', quest: '前往 1F 教室自己的座位朗读古诗 📖', sub: 'chinese', teacher: '林老师 (语文)' };
@@ -637,8 +524,8 @@ function periodAt(h) {
   if (h < 10.0) return { name: '数学课', type: 'class', quest: '在教室听张老师讲加减乘除 ➕', sub: 'math', teacher: '张老师 (数学)' };
   if (h < 10.4) return { name: '大课间操', type: 'exercise', quest: '前往操场集合做广播体操 🏃', sub: null };
   if (h < 11.4) return { name: '英语课', type: 'class', quest: '在教室听 Miss White 讲英语单词 🔤', sub: 'english', teacher: 'Miss White' };
-  if (h < 12.8) return { name: '午餐与午休', type: 'lunch', quest: '去食堂享用香喷喷的午餐吧 🍱', sub: null };
-  if (h < 14.5) return { name: '自由活动课', type: 'activity', quest: '去篮球场投篮、图书馆阅读或玩滑梯 🏀', sub: null };
+  if (h < 12.8) return { name: '午餐午休', type: 'lunch', quest: '去食堂享用香喷喷的午餐吧 🍱', sub: null };
+  if (h < 14.5) return { name: '自由活动', type: 'activity', quest: '去篮球场投篮、操场奔跑或玩滑梯 🏀', sub: null };
   if (h < 16.0) return { name: '放学时间', type: 'after', quest: '前往校门口，爸爸来接你回家啦 👨', sub: null };
   return { name: '家庭温馨时光', type: 'home', quest: '在家里吃晚饭、写作业、玩耍或睡觉 🏠', sub: null };
 }
@@ -650,9 +537,8 @@ function onPeriodChange() {
   currentPeriod = periodAt(hourNow());
   questHintEl.textContent = '📍 目标：' + currentPeriod.quest;
   
-  // 更新黑板
   if (currentPeriod.type === 'read') {
-    updateBlackboard('早读课 - 《春晓》', '春眠不觉晓，处处闻啼鸟。', '夜来风雨声，花落知多少。', '林老师 (语文)');
+    updateBlackboard('早读课 - 《咏柳》', '碧玉妆成一树高，万条垂下绿丝绦。', '不知细叶谁裁出，二月春风似剪刀。', '林老师 (语文)');
   } else if (currentPeriod.name === '语文课') {
     updateBlackboard('第一节·语文课 - 汉字与成语', '温故而知新，可以为师矣。', '读万卷书，行万里路。', '林老师 (语文)');
   } else if (currentPeriod.name === '数学课') {
@@ -661,7 +547,6 @@ function onPeriodChange() {
     updateBlackboard('第三节·英语课 - 快乐日常用语', 'Good morning! How are you today?', 'Apple / Banana / School / Friend', 'Miss White');
   }
 
-  // 导航光环位置更新
   if (currentPeriod.type === 'read' || currentPeriod.type === 'class') {
     navMarker.visible = true; navMarker.position.set(playerDeskPos.x, 0, playerDeskPos.z);
   } else if (currentPeriod.type === 'after') {
@@ -672,27 +557,22 @@ function onPeriodChange() {
     navMarker.visible = false;
   }
 
-  // 放学触发爸爸接送
-  if (currentPeriod.type === 'after' && !parentNPC) {
-    spawnParent();
-  }
+  if (currentPeriod.type === 'after' && !parentNPC) spawnParent();
 }
 
 /* ============================================================
-   答题与知识题库（语文 / 数学 / 英语）
+   答题系统
 ============================================================ */
 const quizBank = {
   chinese: [
     { q: '「春眠不觉晓」下一句是？', opts: ['处处闻啼鸟', '夜来风雨声', '花落知多少'], ans: 0, speak: '春眠不觉晓的下一句是什么？' },
     { q: '「日」字加上一笔可以变成什么字？', opts: ['目', '木', '口'], ans: 0, speak: '日字加上一笔可以变成什么字？' },
-    { q: '「大」的反义词是什么？', opts: ['多', '小', '长'], ans: 1, speak: '大的反义词是什么？' },
-    { q: '哪个字代表水的意思？', opts: ['河', '林', '火'], ans: 0, speak: '哪个字代表水的意思？' }
+    { q: '「大」的反义词是什么？', opts: ['多', '小', '长'], ans: 1, speak: '大的反义词是什么？' }
   ],
   math: [
     { q: '7 + 8 等于多少？', opts: ['14', '15', '16'], ans: 1, speak: '7加8等于多少？' },
     { q: '15 减 6 等于多少？', opts: ['8', '9', '10'], ans: 1, speak: '15减6等于多少？' },
-    { q: '3 个 4 相加是多少？', opts: ['12', '14', '10'], ans: 0, speak: '3个4相加是多少？' },
-    { q: '比 9 大 5 的数是？', opts: ['13', '14', '15'], ans: 1, speak: '比9大5的数是多少？' }
+    { q: '3 个 4 相加是多少？', opts: ['12', '14', '10'], ans: 0, speak: '3个4相加是多少？' }
   ],
   english: [
     { q: '「苹果」的英文单词是？', opts: ['Apple', 'Banana', 'Cat'], ans: 0, speak: '苹果的英文单词是什么？' },
@@ -714,10 +594,12 @@ let quizState = { active: false, cat: 'chinese', list: [], idx: 0, right: 0 };
 
 function speakText(txt) {
   if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(txt);
-  u.lang = 'zh-CN'; u.rate = 0.9;
-  window.speechSynthesis.speak(u);
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(txt);
+    u.lang = 'zh-CN'; u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  } catch(e){}
 }
 quizSpeakEl.onclick = () => {
   const q = quizState.list[quizState.idx];
@@ -743,8 +625,7 @@ function renderQuiz() {
   const cls = ['optA', 'optB', 'optC'];
   q.opts.forEach((opt, i) => {
     const btn = document.createElement('button');
-    btn.className = cls[i];
-    btn.textContent = opt;
+    btn.className = cls[i]; btn.textContent = opt;
     btn.onclick = () => answerQuiz(i);
     quizOptsEl.appendChild(btn);
   });
@@ -767,7 +648,7 @@ function answerQuiz(i) {
     quizState.idx++;
     if (quizState.idx < quizState.list.length) renderQuiz();
     else finishQuiz();
-  }, 1200);
+  }, 1100);
 }
 
 function finishQuiz() {
@@ -787,22 +668,19 @@ function closeQuiz() {
 }
 
 /* ============================================================
-   同学 NPC 聊天与交友系统
+   同学 NPC 对话
 ============================================================ */
 const npcDefs = [
-  { name: '小雨', topic: '你今天语文课文会背了吗？《春晓》好优美呀！', replyGood: '对呀！我也很喜欢，下课我们一起背！', replyBad: '没事，多读两遍就记住了～' },
-  { name: '阿杰', topic: '等会儿自由活动课去操场踢球或者打篮球吧！', replyGood: '好耶！我带了足球，待会儿球场见！', replyBad: '那你想去的时候再叫我呀。' },
-  { name: '婷婷', topic: '科学老师说今天天气真好，花园的花都开了！', replyGood: '真的！放学我们一起去花坛看看吧！', replyBad: '嗯嗯，太阳暖洋洋的真舒服。' }
+  { name: '小雨', topic: '你今天语文课文会背了吗？《咏柳》好优美呀！', reply: '对呀！我也很喜欢，下课我们一起背！' },
+  { name: '阿杰', topic: '等会儿自由活动课去操场踢球或者打篮球吧！', reply: '好耶！我带了足球，待会儿球场见！' }
 ];
 const npcs = npcDefs.map((def, idx) => {
   const m = makeHumanModel(0x43a047, 0x1b5e20, 0x5d4037);
-  m.position.set(-15 + idx * 12, 0, 30);
-  scene.add(m);
+  m.position.set(-15 + idx * 14, 0, 30); scene.add(m);
   return { def, group: m, fri: 20 };
 });
 
 let chatActive = false;
-let currentChatNpc = null;
 const chatEl = document.getElementById('chat');
 const chatNameEl = document.getElementById('chatName');
 const chatFriEl = document.getElementById('chatFri');
@@ -810,32 +688,25 @@ const chatBodyEl = document.getElementById('chatBody');
 const chatOptsEl = document.getElementById('chatOpts');
 
 function openChat(st) {
-  chatActive = true; currentChatNpc = st;
+  chatActive = true;
   chatNameEl.textContent = st.def.name;
   chatFriEl.textContent = '友好度 ' + st.fri;
   chatBodyEl.innerHTML = `<div class="npc-line">${st.def.topic}</div>`;
   chatOptsEl.innerHTML = '';
-  
   const b1 = document.createElement('button');
   b1.textContent = '好呀！一起交流一起玩！';
   b1.onclick = () => {
     st.fri += 10; stats.mood += 5; updateStatsUI();
-    chatBodyEl.innerHTML += `<div class="me-line">好呀！一起交流一起玩！</div><div class="npc-line">${st.def.replyGood}</div>`;
-    chatOptsEl.innerHTML = '<button onclick="window.closeChatUI()">开心！关闭聊天 (E)</button>';
+    chatBodyEl.innerHTML += `<div class="me-line">好呀！一起交流一起玩！</div><div class="npc-line">${st.def.reply}</div>`;
+    chatOptsEl.innerHTML = '<button onclick="window.closeChatUI()">开心！关闭聊天</button>';
   };
-  const b2 = document.createElement('button');
-  b2.textContent = '我今天有点累，待会儿再说吧。';
-  b2.onclick = () => {
-    chatBodyEl.innerHTML += `<div class="me-line">我今天有点累，待会儿再说吧。</div><div class="npc-line">${st.def.replyBad}</div>`;
-    chatOptsEl.innerHTML = '<button onclick="window.closeChatUI()">好的，拜拜 (E)</button>';
-  };
-  chatOptsEl.appendChild(b1); chatOptsEl.appendChild(b2);
+  chatOptsEl.appendChild(b1);
   chatEl.style.display = 'block';
 }
 window.closeChatUI = () => { chatActive = false; chatEl.style.display = 'none'; };
 
 /* ============================================================
-   放学接送与交通工具过程
+   放学与交通工具
 ============================================================ */
 let parentNPC = null;
 const pickupEl = document.getElementById('pickup');
@@ -846,13 +717,10 @@ function spawnParent() {
   if (parentNPC) return;
   parentNPC = makeHumanModel(0x37474f, 0x263238, 0x212121);
   parentNPC.scale.setScalar(1.15);
-  parentNPC.position.set(0, 0, GATE_Z);
-  scene.add(parentNPC);
+  parentNPC.position.set(0, 0, GATE_Z); scene.add(parentNPC);
 }
 
-function openPickupUI() {
-  pickupEl.style.display = 'block';
-}
+function openPickupUI() { pickupEl.style.display = 'block'; }
 
 pickupEl.querySelectorAll('.pickup-btn').forEach(btn => {
   btn.onclick = () => selectPickupMode(btn.dataset.mode);
@@ -866,22 +734,17 @@ function selectPickupMode(mode) {
     bus: '🚌 公交车缓缓进站，和小伙伴们挥手告别，坐车回家...',
     subway: '🚇 刷卡走进地铁站，乘坐飞驰的地铁准时到家...'
   };
-  
   rideOverlay.textContent = rideTexts[mode];
   rideOverlay.style.display = 'block';
   fadeEl.style.opacity = '1';
 
   setTimeout(() => {
-    // 瞬移到温馨小家
-    girl.position.set(HOME.cx, 0, HOME.cz + 8);
+    girl.position.set(HOME.cx, 0, HOME.cz + 6);
     girl.rotation.y = Math.PI;
     yaw = Math.PI; camYaw = Math.PI;
-    dayTime = DAY_LEN * 0.68; // 切换到傍晚家庭时间
+    dayTime = DAY_LEN * 0.68;
     onPeriodChange();
-    
-    // 家长就位
     if (parentNPC) { scene.remove(parentNPC); parentNPC = null; }
-    
     fadeEl.style.opacity = '0';
     rideOverlay.style.display = 'none';
     stats.mood += 10; updateStatsUI();
@@ -889,23 +752,20 @@ function selectPickupMode(mode) {
 }
 
 /* ============================================================
-   交互点定义（校园 + 家庭）
+   交互点与动作逻辑
 ============================================================ */
 const stats = { grades: 60, energy: 100, mood: 90, knowledge: 40 };
 
 const interactables = [
-  // 校园
-  { name: '我的座位', pos: playerDeskPos, radius: 2.5, prompt: '按 <b>E</b> 坐下<b>听课/早读</b>', state: 'study' },
-  { name: '食堂', pos: new THREE.Vector3(CAF.cx, 0, CAF.cz), radius: 6, prompt: '按 <b>E</b> 吃<b>午餐</b>', state: 'canteen' },
-  { name: '篮球场', pos: new THREE.Vector3(COURT.cx, 0, COURT.cz), radius: 7, prompt: '按 <b>E</b> 打<b>篮球</b>', state: 'basket' },
-  { name: '操场', pos: new THREE.Vector3(FIELD.cx, 0, FIELD.cz), radius: 10, prompt: '按 <b>E</b> 做<b>课间操/跑步</b>', state: 'sport' },
-  { name: '放学接送点', pos: new THREE.Vector3(0, 0, GATE_Z), radius: 5, prompt: '按 <b>E</b> 和<b>爸爸一起回家</b>', state: 'pickup' },
-  
-  // 温馨小家
-  { name: '家庭餐桌', pos: new THREE.Vector3(HOME.cx + 6, 0, HOME.cz - 4), radius: 3, prompt: '按 <b>E</b> 吃<b>妈妈做的香喷喷晚饭</b>', state: 'homeEat' },
-  { name: '家庭书桌', pos: new THREE.Vector3(HOME.cx - 8, 0, HOME.cz + 2), radius: 3, prompt: '按 <b>E</b> 认真<b>写家庭作业/复习</b>', state: 'homeHomework' },
-  { name: '客厅电视/玩具', pos: new THREE.Vector3(HOME.cx + 6, 0, HOME.cz + 5), radius: 3, prompt: '按 <b>E</b> <b>看动画片/玩玩具</b>', state: 'homePlay' },
-  { name: '温馨小床', pos: new THREE.Vector3(HOME.cx - 8, 0, HOME.cz - 6), radius: 3, prompt: '按 <b>E</b> <b>睡觉休息</b>，迎来美好新一天', state: 'homeSleep' }
+  { name: '我的座位', pos: playerDeskPos, radius: 3.0, prompt: '坐下<b>听课/早读</b>', state: 'study' },
+  { name: '食堂', pos: new THREE.Vector3(CAF.cx, 0, CAF.cz), radius: 6, prompt: '吃<b>午餐</b>', state: 'canteen' },
+  { name: '篮球场', pos: new THREE.Vector3(COURT.cx, 0, COURT.cz), radius: 7, prompt: '打<b>篮球投篮</b>', state: 'basket' },
+  { name: '操场', pos: new THREE.Vector3(FIELD.cx, 0, FIELD.cz), radius: 10, prompt: '做<b>课间操/跑步</b>', state: 'sport' },
+  { name: '放学接送点', pos: new THREE.Vector3(0, 0, GATE_Z), radius: 5, prompt: '和<b>爸爸一起回家</b>', state: 'pickup' },
+  { name: '家庭餐桌', pos: new THREE.Vector3(HOME.cx + 6, 0, HOME.cz - 4), radius: 3.5, prompt: '吃<b>妈妈做的香喷喷晚饭</b>', state: 'homeEat' },
+  { name: '家庭书桌', pos: new THREE.Vector3(HOME.cx - 8, 0, HOME.cz + 2), radius: 3.5, prompt: '认真<b>写家庭作业/复习</b>', state: 'homeHomework' },
+  { name: '客厅电视/玩具', pos: new THREE.Vector3(HOME.cx + 6, 0, HOME.cz + 4.5), radius: 3.5, prompt: '<b>看动画片/玩玩具</b>', state: 'homePlay' },
+  { name: '温馨小床', pos: new THREE.Vector3(HOME.cx - 8, 0, HOME.cz - 5.5), radius: 3.5, prompt: '<b>睡觉休息</b>，迎接新一天', state: 'homeSleep' }
 ];
 
 let stateLock = false;
@@ -915,9 +775,8 @@ function tryInteract() {
   if (quizState.active) return;
   if (chatActive) { window.closeChatUI(); return; }
   
-  // 检查是否靠近同学
   for (const st of npcs) {
-    if (girl.position.distanceTo(st.group.position) < 3.5) {
+    if (girl.position.distanceTo(st.group.position) < 3.8) {
       openChat(st); return;
     }
   }
@@ -936,53 +795,192 @@ function handleInteraction(state) {
     girl.position.set(playerDeskPos.x, 0, playerDeskPos.z + 0.6);
     girl.rotation.y = Math.PI;
     const sub = currentPeriod.sub || 'chinese';
-    const names = { chinese: '语文课堂', math: '数学课堂', english: '英语课堂' };
+    const names = { chinese: '语文课堂 ✍️', math: '数学课堂 ➕', english: '英语课堂 🔤' };
     startQuiz(sub, names[sub] || '早读与学习');
   } else if (state === 'pickup') {
     openPickupUI();
   } else if (state === 'canteen') {
-    stats.energy = Math.min(100, stats.energy + 30); stats.mood += 5;
-    updateStatsUI();
-    alert('🍱 在食堂享用了美味的鸡腿套餐！体力充沛！');
+    stats.energy = Math.min(100, stats.energy + 30); stats.mood += 5; updateStatsUI();
+    alert('🍱 在食堂享用了美味套餐！体力恢复！');
   } else if (state === 'homeEat') {
-    stats.energy = 100; stats.mood = Math.min(100, stats.mood + 15);
-    updateStatsUI();
-    alert('🍲 吃到了妈妈做的热腾腾饭菜！好幸福！体力全满！');
+    stats.energy = 100; stats.mood = Math.min(100, stats.mood + 15); updateStatsUI();
+    alert('🍲 吃到了妈妈做的热腾腾晚饭！体力全满！');
   } else if (state === 'homeHomework') {
     startQuiz('math', '家庭作业 - 巩固练习 ✏️');
   } else if (state === 'homePlay') {
-    stats.mood = 100; stats.energy = Math.max(0, stats.energy - 5);
-    updateStatsUI();
+    stats.mood = 100; stats.energy = Math.max(0, stats.energy - 5); updateStatsUI();
     alert('🎮 看了喜欢的动画片，玩了积木，心情极佳！');
   } else if (state === 'homeSleep') {
     fadeEl.style.opacity = '1';
     rideOverlay.textContent = '🌙 盖好小被子进入甜美梦乡... 呼噜噜...';
     rideOverlay.style.display = 'block';
     setTimeout(() => {
-      dayCount++;
-      dayTime = 0; // 早上 7:00
+      dayCount++; dayTime = 0;
       girl.position.copy(START_POS);
-      girl.position.y = 0;
       onPeriodChange();
       fadeEl.style.opacity = '0';
       rideOverlay.style.display = 'none';
       stats.energy = 100; updateStatsUI();
       alert(`☀️ 叮铃铃！新的一天开始了（第 ${dayCount} 天），精神饱满地上学去啦！`);
-    }, 2500);
+    }, 2400);
   }
 }
 
-function exitState() {
-  stateLock = false; currentState = null;
+function exitState() { stateLock = false; currentState = null; }
+
+/* ============================================================
+   触屏 / Pad 虚拟摇杆与视角控制 (关键核心修复)
+============================================================ */
+const joyBase = document.getElementById('joyBase');
+const joyKnob = document.getElementById('joyKnob');
+const joyZone = document.getElementById('joyZone');
+const lookZone = document.getElementById('lookZone');
+
+const joyState = { active: false, id: null, cx: 0, cy: 0 };
+const JOY_R = 50;
+const touchMove = { fwd: 0, strafe: 0 };
+let touchRun = false;
+
+// 摇杆控制
+joyZone.addEventListener('touchstart', e => {
+  e.preventDefault(); e.stopPropagation();
+  if (joyState.active) return;
+  const t = e.changedTouches[0];
+  const rect = joyBase.getBoundingClientRect();
+  joyState.active = true; joyState.id = t.identifier;
+  joyState.cx = rect.left + rect.width / 2;
+  joyState.cy = rect.top + rect.height / 2;
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    if (joyState.active && t.identifier === joyState.id) {
+      let dx = t.clientX - joyState.cx;
+      let dy = t.clientY - joyState.cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist > JOY_R) { dx = (dx / dist) * JOY_R; dy = (dy / dist) * JOY_R; }
+      joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+      touchMove.strafe = dx / JOY_R;
+      touchMove.fwd = -dy / JOY_R;
+      touchRun = dist > JOY_R * 0.85;
+    }
+  }
+}, { passive: false });
+
+const endJoy = e => {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    if (e.changedTouches[i].identifier === joyState.id) {
+      joyState.active = false; joyState.id = null;
+      joyKnob.style.transform = 'translate(0px, 0px)';
+      touchMove.fwd = 0; touchMove.strafe = 0; touchRun = false;
+    }
+  }
+};
+window.addEventListener('touchend', endJoy);
+window.addEventListener('touchcancel', endJoy);
+
+// 右侧屏幕拖拽转视角
+const lookState = { active: false, id: null, lx: 0, ly: 0 };
+lookZone.addEventListener('touchstart', e => {
+  e.preventDefault(); e.stopPropagation();
+  if (lookState.active) return;
+  const t = e.changedTouches[0];
+  lookState.active = true; lookState.id = t.identifier;
+  lookState.lx = t.clientX; lookState.ly = t.clientY;
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    if (lookState.active && t.identifier === lookState.id) {
+      const dx = t.clientX - lookState.lx;
+      const dy = t.clientY - lookState.ly;
+      lookState.lx = t.clientX; lookState.ly = t.clientY;
+      camYaw -= dx * 0.005;
+      camPitch -= dy * 0.004;
+      camPitch = Math.max(-1.1, Math.min(1.1, camPitch));
+    }
+  }
+}, { passive: false });
+
+const endLook = e => {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    if (e.changedTouches[i].identifier === lookState.id) {
+      lookState.active = false; lookState.id = null;
+    }
+  }
+};
+window.addEventListener('touchend', endLook);
+window.addEventListener('touchcancel', endLook);
+
+// 触屏按键
+const bindBtn = (id, fn) => {
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); fn(); }, { passive: false });
+  el.addEventListener('click', fn);
+};
+
+let fastForward = false;
+bindBtn('tBtnInteract', tryInteract);
+bindBtn('tBtnReset', () => girl.position.copy(START_POS));
+bindBtn('tBtnFF', () => { fastForward = !fastForward; });
+bindBtn('tBtnJump', () => {
+  if (girl.position.y <= 0.1) {
+    girl.position.y = 1.6;
+    setTimeout(() => { girl.position.y = 0; }, 320);
+  }
+});
+
+// 点击悬浮提示条也可直接交互
+const promptEl = document.getElementById('prompt');
+promptEl.addEventListener('touchstart', e => { e.preventDefault(); tryInteract(); });
+promptEl.addEventListener('click', tryInteract);
+
+/* ============================================================
+   电脑键盘与鼠标视角
+============================================================ */
+const keys = {};
+let camYaw = 0, camPitch = -0.3;
+let yaw = 0;
+const SPEED = 8.5;
+
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'KeyE') tryInteract();
+  if (e.code === 'KeyQ') fastForward = !fastForward;
+  if (e.code === 'KeyR') girl.position.copy(START_POS);
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+const isTouch = (navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+if (!isTouch) {
+  renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
+  document.addEventListener('mousemove', e => {
+    if (document.pointerLockElement === renderer.domElement) {
+      camYaw -= e.movementX * 0.0025;
+      camPitch -= e.movementY * 0.0025;
+      camPitch = Math.max(-1.1, Math.min(1.1, camPitch));
+    }
+  });
+}
+
+function updateCamera(immediate = false) {
+  const back = new THREE.Vector3(Math.sin(camYaw), 0, Math.cos(camYaw));
+  const targetCamPos = girl.position.clone().addScaledVector(back, 8.5);
+  targetCamPos.y += 5.2;
+  
+  if (immediate) camera.position.copy(targetCamPos);
+  else camera.position.lerp(targetCamPos, 0.22);
+  camera.quaternion.setFromEuler(new THREE.Euler(camPitch, camYaw, 0, 'YXZ'));
 }
 
 /* ============================================================
-   UI 与数据更新
+   UI 刷新
 ============================================================ */
 const periodEl = document.getElementById('period');
 const clockEl = document.getElementById('clock');
 const dayEl = document.getElementById('day');
-const promptEl = document.getElementById('prompt');
 const gradesBar = document.getElementById('st-grades');
 const energyBar = document.getElementById('st-energy');
 const moodBar = document.getElementById('st-mood');
@@ -1013,66 +1011,21 @@ function updatePrompt() {
   }
   if (!found) {
     for (const st of npcs) {
-      if (girl.position.distanceTo(st.group.position) < 3.5) {
-        found = { prompt: `按 <b>E</b> 和同学 <b>${st.def.name}</b> 聊天交友` }; break;
+      if (girl.position.distanceTo(st.group.position) < 3.8) {
+        found = { prompt: `和同学 <b>${st.def.name}</b> 聊天交友` }; break;
       }
     }
   }
   if (found) {
-    promptEl.innerHTML = found.prompt; promptEl.style.display = 'block';
+    promptEl.innerHTML = `👉 点此或按【交互】：${found.prompt}`;
+    promptEl.style.display = 'block';
   } else {
     promptEl.style.display = 'none';
   }
 }
 
 /* ============================================================
-   输入控制与相机跟踪
-============================================================ */
-const keys = {};
-let camYaw = 0, camPitch = -0.3;
-let yaw = 0;
-const SPEED = 8;
-
-window.addEventListener('keydown', e => {
-  keys[e.code] = true;
-  if (e.code === 'KeyE') tryInteract();
-  if (e.code === 'KeyQ') fastForward = !fastForward;
-  if (e.code === 'KeyR') girl.position.copy(START_POS);
-});
-window.addEventListener('keyup', e => { keys[e.code] = false; });
-
-const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-if (isTouch) {
-  document.getElementById('touchUI').classList.add('active');
-} else {
-  renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
-  document.addEventListener('mousemove', e => {
-    if (document.pointerLockElement === renderer.domElement) {
-      camYaw -= e.movementX * 0.0025;
-      camPitch -= e.movementY * 0.0025;
-      camPitch = Math.max(-1.1, Math.min(1.1, camPitch));
-    }
-  });
-}
-
-// 触屏按钮
-document.getElementById('tBtnInteract').onclick = tryInteract;
-document.getElementById('tBtnReset').onclick = () => girl.position.copy(START_POS);
-let fastForward = false;
-document.getElementById('tBtnFF').onclick = () => { fastForward = !fastForward; };
-
-function updateCamera(immediate = false) {
-  const back = new THREE.Vector3(Math.sin(camYaw), 0, Math.cos(camYaw));
-  const targetCamPos = girl.position.clone().addScaledVector(back, 8.5);
-  targetCamPos.y += 5.5;
-  
-  if (immediate) camera.position.copy(targetCamPos);
-  else camera.position.lerp(targetCamPos, 0.2);
-  camera.quaternion.setFromEuler(new THREE.Euler(camPitch, camYaw, 0, 'YXZ'));
-}
-
-/* ============================================================
-   主循环
+   主循环更新
 ============================================================ */
 const clock = new THREE.Clock();
 let walkPhase = 0;
@@ -1093,56 +1046,19 @@ function update(dt) {
     onPeriodChange();
   }
 
-  // 导航光环旋转
   navMarker.rotation.y += dt * 1.5;
 
-  // 玩家移动
+  // 角色移动（同时融合 键盘 和 触屏虚拟摇杆）
   if (!stateLock && !quizState.active && !chatActive) {
     const forward = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const right = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
     const move = new THREE.Vector3();
+
+    // 键盘
     if (keys['KeyW']) move.add(forward);
     if (keys['KeyS']) move.sub(forward);
     if (keys['KeyD']) move.add(right);
     if (keys['KeyA']) move.sub(right);
 
-    if (move.lengthSq() > 0) {
-      const running = keys['ShiftLeft'] || keys['ShiftRight'];
-      move.normalize().multiplyScalar((running ? SPEED * 1.8 : SPEED) * dt);
-      girl.position.add(move);
-      yaw = Math.atan2(move.x, move.z);
-      girl.rotation.y = yaw;
-      walkPhase += dt * 12;
-      const s = Math.sin(walkPhase);
-      girl.userData.legL.rotation.x = s * 0.6; girl.userData.legR.rotation.x = -s * 0.6;
-    } else {
-      girl.userData.legL.rotation.x *= 0.8; girl.userData.legR.rotation.x *= 0.8;
-    }
-  }
-
-  collidePlayer(girl.position);
-  updateCamera();
-  updatePrompt();
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  update(dt);
-  renderer.render(scene, camera);
-}
-
-// 启动首帧
-onPeriodChange();
-updateStatsUI();
-updateCamera(true);
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
-</body>
-</html>
+    // 触屏摇杆输入
+    if (touchMove.fwd !== 0 || touchMove
