@@ -40,6 +40,12 @@
     font-size: 14px; display: none;
   }
   #bball b { color: #ffd966; font-family: monospace; font-size: 18px; }
+  #ff-ind {
+    position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 21;
+    background: rgba(255,160,64,0.95); color: #5d2f00; padding: 4px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: bold; display: none; pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
   #help {
     position: fixed; left: 12px; bottom: 12px; z-index: 20;
     background: rgba(0,0,0,0.45); color: #fff; padding: 10px 14px; border-radius: 10px;
@@ -256,6 +262,7 @@
     </div>
     <div id="bball">🏀 命中 <b id="bball-score">0</b></div>
   </div>
+  <div id="ff-ind">⏩ 快进中 ×4</div>
 </div>
 <canvas id="app"></canvas>
 <div id="crosshair"></div>
@@ -264,7 +271,7 @@
 <div id="help">
   <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动　<kbd>Shift</kbd> 跑　鼠标转视角<br>
   <kbd>E</kbd> 交互 / 聊天 / 结束当前状态　<kbd>Space</kbd> 跳跃（投篮时出手）<br>
-  <kbd>Q</kbd> 时间快进(×8)　<kbd>R</kbd> 重置位置　校门朝南可出校园<br>
+  <kbd>Q</kbd> 时间快进(×4)　<kbd>R</kbd> 重置位置　校门朝南可出校园<br>
   靠近同学可<b>聊天交友</b>　出校门可上城市<b>楼顶</b>
 </div>
 <div id="friends"></div>
@@ -825,6 +832,49 @@ const npcDeskPos = [
 ];
 npcDeskPos.forEach(([x, z]) => buildGroup.add(makeDesk(x, z)));
 
+// 老师（讲台旁，上课/早读时出现）
+let teacherNPC = null;
+{
+  teacherNPC = makeStudent({
+    skin: 0xf5cba0, hair: 0x212121, top: 0x2e7d32, bottom: 0x263238, shoe: 0x1a1a1a,
+    ponytails: false, mouth: true,
+  });
+  teacherNPC.scale.setScalar(1.12);
+  teacherNPC.position.set(0, 0, -38);      // 讲台前，面朝学生（+z）
+  teacherNPC.rotation.y = 0;
+  teacherNPC.visible = false;              // 仅在上课/早读时显示
+  teacherNPC.userData.idleT = 0;
+  buildGroup.add(teacherNPC);
+}
+// 黑板上的科目提示牌（显示当前上什么课）
+let subjectBoard = null;
+{
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
+  const tex = new THREE.CanvasTexture(cv);
+  tex.anisotropy = 4;
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+  subjectBoard = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), mat);
+  subjectBoard.position.set(MAIN.cx, 4.4, MAIN.cz - MAIN.d / 2 + 0.3);
+  subjectBoard.visible = false;
+  buildGroup.add(subjectBoard);
+  subjectBoard.userData.cv = cv;
+  subjectBoard.userData.tex = tex;
+}
+function drawSubjectBoard(label) {
+  if (!subjectBoard) return;
+  const cv = subjectBoard.userData.cv, tex = subjectBoard.userData.tex;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = '#fff3c4';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.strokeStyle = '#e6a817'; ctx.lineWidth = 8; ctx.strokeRect(4, 4, cv.width - 8, cv.height - 8);
+  ctx.fillStyle = '#3a3a3a';
+  ctx.font = 'bold 64px "Microsoft YaHei", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, cv.width / 2, cv.height / 2);
+  tex.needsUpdate = true;
+}
+
 // 2~6 层
 for (let i = 1; i < MAIN.floors; i++) {
   const y = i * MAIN.floorH;
@@ -995,6 +1045,15 @@ const libraryBooks = [
   { title: '《红楼梦》', author: '曹雪芹', content: '满纸荒唐言，一把辛酸泪。都云作者痴，谁解其中味...' },
 ];
 
+// 早读课文（教室早读时显示，让玩家明确"早读"在做什么）
+const morningReadings = [
+  { title: '《静夜思》', author: '李白', content: '床前明月光，疑是地上霜。举头望明月，低头思故乡。' },
+  { title: '《春晓》', author: '孟浩然', content: '春眠不觉晓，处处闻啼鸟。夜来风雨声，花落知多少。' },
+  { title: '《咏鹅》', author: '骆宾王', content: '鹅鹅鹅，曲项向天歌。白毛浮绿水，红掌拨清波。' },
+  { title: '《悯农》', author: '李绅', content: '锄禾日当午，汗滴禾下土。谁知盘中餐，粒粒皆辛苦。' },
+];
+let morningReadIdx = 0;
+
 // 图书馆阅读状态
 let readingBook = null;
 const bookUI = document.getElementById('bookUI');
@@ -1107,27 +1166,46 @@ for (let lx of [-1.6, 1.6]) for (let lz of [-0.5, 0.5]) {
   leg.position.set(ADMIN.cx + lx, 0.375, ADMIN.cz + lz); scene.add(leg);
 }
 
-// 独立厕所（男/女，北侧）
+// 独立厕所（男/女，北侧）——空心墙体 + 南面留门洞，玩家可走进室内
 function makeToilet(x, z, color, signColor, name) {
   const grp = new THREE.Group();
   const tex = makeWallTexture(color, '#cfe8ff', 3, 1);
-  const body = new THREE.Mesh(new THREE.BoxGeometry(7, 5, 7),
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 }));
-  body.position.y = 2.5; body.castShadow = true; body.receiveShadow = true;
-  grp.add(body);
+  const wallMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
+  const th = 0.4, h = 5, halfW = 1.5;   // 墙厚 0.4，墙高 5，门洞半宽 1.5（门洞宽 3）
+  const xL = x - 3.5, xR = x + 3.5;     // 房间左右边界
+  const zN = z - 3.5, zS = z + 3.5;     // zN=北墙，zS=南墙（门在这侧）
+  function seg(x0, x1, z0, z1, y0, y1, mat) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat);
+    m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+    m.castShadow = true; m.receiveShadow = true;
+    grp.add(m);
+  }
+  // 地板
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(7, 0.3, 7),
+    new THREE.MeshStandardMaterial({ color: 0xd0d0d0, roughness: 0.9 }));
+  floor.position.set(x, 0.15, z); floor.receiveShadow = true; grp.add(floor);
+  // 北墙 + 东西墙 + 南墙（留门洞）+ 门楣
+  seg(xL, xR, zN, zN + th, 0, h, wallMat);                 // 北墙
+  seg(xL, xL + th, zN, zS, 0, h, wallMat);                 // 西墙
+  seg(xR - th, xR, zN, zS, 0, h, wallMat);                 // 东墙
+  seg(xL, x - halfW, zS - th, zS, 0, h, wallMat);          // 南墙·左
+  seg(x + halfW, xR, zS - th, zS, 0, h, wallMat);          // 南墙·右
+  seg(x - halfW, x + halfW, zS - th, zS, 4, h, wallMat);   // 门楣（门高 4，角色约 3.6 高）
+  // 屋顶（保留原圆锥造型）
   const roof = new THREE.Mesh(new THREE.ConeGeometry(6, 2, 4),
     new THREE.MeshStandardMaterial({ color: 0x6d4c41, roughness: 0.8 }));
-  roof.rotation.y = Math.PI / 4; roof.position.y = 6; roof.castShadow = true;
+  roof.rotation.y = Math.PI / 4; roof.position.set(x, 6, z); roof.castShadow = true;
   grp.add(roof);
-  const door = new THREE.Mesh(new THREE.PlaneGeometry(2, 3),
+  // 门（门洞处）
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(2, 3.6),
     new THREE.MeshStandardMaterial({ color: 0x4e342e, side: THREE.DoubleSide }));
-  door.position.set(0, 1.5, 3.51); grp.add(door);
+  door.position.set(x, 1.8, zS + 0.01); grp.add(door);
+  // 标识 + 顶灯
   const sign = makeBuildingSign(name, 2.6, 0.72, '#37474f', '#ffffff');
-  sign.position.set(0, 3.6, 3.6); grp.add(sign);
+  sign.position.set(x, 3.6, zS + 0.1); grp.add(sign);
   const ball = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 12),
     new THREE.MeshStandardMaterial({ color: signColor, emissive: signColor, emissiveIntensity: 0.3 }));
-  ball.position.set(0, 7.2, 0); grp.add(ball);
-  grp.position.set(x, 0, z);
+  ball.position.set(x, 7.2, z); grp.add(ball);
   scene.add(grp);
 }
 makeToilet(-15.5, -50, '#bcaaa4', 0x42a5f5, '男厕');
@@ -1620,7 +1698,7 @@ spawnCar('Ox-165', 1); spawnCar('Ox-165', -1);
 /* ============================================================
    昼夜系统
 ============================================================ */
-const DAY_LEN = 240;      // 一天实际时长（秒）
+const DAY_LEN = 600;      // 一天实际时长（秒）≈10分钟/天，避免时间过飞
 let dayTime = 0;          // 当日已过时间
 let dayCount = 1;
 function hourNow() { return 7 + (dayTime / DAY_LEN) * 15; } // 7:00 → 22:00
@@ -1672,23 +1750,34 @@ function applySky() {
   sun.target.updateMatrixWorld();
   const n = nightFactor();
   lampHeads.forEach(h => { h.material.emissiveIntensity = 0.5 + 3.2 * n; });
+  // 地铁乘车：压暗环境模拟隧道
+  if (rideActive && rideMode === 'subway') {
+    scene.background.copy(new THREE.Color(0x05080e));
+    scene.fog.color.copy(new THREE.Color(0x05080e));
+    sun.intensity = 0.05;
+    hemi.intensity = 0.12;
+  }
 }
 let gy = 0;
 
 /* ============================================================
    作息时间表
 ============================================================ */
+// 各节"上课"轮流科目：语文→数学→英语→语文→数学（让玩家能上到语文课）
+const CLASS_SUBJECTS = ['chinese', 'math', 'english', 'chinese', 'math'];
+const SUBJECT_LABEL = { math: '数学', chinese: '语文', english: '英语' };
+
 function periodAt(h) {
-  if (h < 7.5)  return { name: '早读',   type: 'read' };
-  if (h < 8.5)  return { name: '上课',   type: 'class' };
-  if (h < 9.0)  return { name: '课间',   type: 'break' };
-  if (h < 10.0) return { name: '上课',   type: 'class' };
-  if (h < 10.3) return { name: '课间操', type: 'exercise' };
-  if (h < 11.3) return { name: '上课',   type: 'class' };
-  if (h < 12.7) return { name: '午休',   type: 'lunch' };
-  if (h < 13.7) return { name: '上课',   type: 'class' };
-  if (h < 14.3) return { name: '活动课', type: 'activity' };
-  if (h < 15.0) return { name: '放学',   type: 'after' };
+  if (h < 8.0)  return { name: '早读',   type: 'read',   subject: 'chinese' };
+  if (h < 9.2)  return { name: '上课·语文', type: 'class', subject: 'chinese' };
+  if (h < 9.8)  return { name: '课间',   type: 'break' };
+  if (h < 11.0) return { name: '上课·数学', type: 'class', subject: 'math' };
+  if (h < 11.5) return { name: '课间操', type: 'exercise' };
+  if (h < 12.4) return { name: '上课·英语', type: 'class', subject: 'english' };
+  if (h < 13.8) return { name: '午休',   type: 'lunch' };
+  if (h < 14.8) return { name: '上课·语文', type: 'class', subject: 'chinese' };
+  if (h < 15.8) return { name: '活动课', type: 'activity' };
+  if (h < 16.5) return { name: '放学',   type: 'after' };
   return { name: '夜晚·自由', type: 'night' };
 }
 let currentPeriod = periodAt(hourNow());
@@ -1905,6 +1994,17 @@ const lunchSpots = [
   new THREE.Vector3(-55, 0, 60), new THREE.Vector3(-58, 0, 59),
   new THREE.Vector3(-52, 0, 59), new THREE.Vector3(-55, 0, 48),
 ];
+// 课间操站位：分散在操场各处，避免全部挤在一个点
+const exerciseSpots = [
+  new THREE.Vector3(FIELD.cx - 7, 0, FIELD.cz + 3),
+  new THREE.Vector3(FIELD.cx + 7, 0, FIELD.cz + 3),
+  new THREE.Vector3(FIELD.cx - 7, 0, FIELD.cz - 4),
+  new THREE.Vector3(FIELD.cx + 7, 0, FIELD.cz - 4),
+  new THREE.Vector3(FIELD.cx, 0, FIELD.cz + 6),
+  new THREE.Vector3(FIELD.cx - 4, 0, FIELD.cz + 9),
+  new THREE.Vector3(FIELD.cx + 4, 0, FIELD.cz + 9),
+  new THREE.Vector3(FIELD.cx, 0, FIELD.cz - 7),
+];
 const npcDefs = [
   { name: '小雨', hair: 0x3e2723, top: 0x1976d2, bottom: 0x263238, desk: 0, break: 2, shoe: 0x263238 },
   { name: '阿杰', hair: 0x212121, top: 0x2e7d32, bottom: 0x37474f, desk: 1, break: 1, shoe: 0x1b1b1b },
@@ -1924,8 +2024,8 @@ const npcs = npcDefs.map((def, i) => {
     def, group: grp, desk, lunch: lunchSpots[i],
     break: breakSpots[def.break],
     path: [], state: 'idle', arrive: 'idle',
-    walkPhase: Math.random() * 10, speed: 3.2 + Math.random() * 1.4,
-    zoneKey: null,
+    walkPhase: Math.random() * 10, speed: 4.0 + Math.random() * 1.6,
+    zoneKey: null, idx: i, idleT: Math.random() * 6,
   };
 });
 
@@ -2262,7 +2362,10 @@ const quizOptsEl = document.getElementById('quizOpts');
 const quizMsgEl = document.getElementById('quizMsg');
 const quizQuitEl = document.getElementById('quizQuit');
 const quizSpeakEl = document.getElementById('quizSpeak');
-const quizState = { active: false, cat: null, list: [], idx: 0, right: 0, wrong: 0, answered: false };
+const quizState = { active: false, cat: null, list: [], idx: 0, right: 0, wrong: 0, answered: false, timer: null };
+function cancelQuizTimer() {
+  if (quizState.timer) { clearTimeout(quizState.timer); quizState.timer = null; }
+}
 quizQuitEl.addEventListener('click', closeQuiz);
 quizSpeakEl.addEventListener('click', () => {
   const q = quizState.list[quizState.idx];
@@ -2285,6 +2388,8 @@ function speakText(text) {
 
 function startQuiz(cat) {
   if (quizState.active) return;
+  // 'current' = 按当前课节科目决定（语文/数学/英语轮流）
+  if (cat === 'current') cat = (currentPeriod && currentPeriod.subject) || 'math';
   const pool = (quizBank[cat] || []).filter(q => q.diff <= QUIZ_LEVEL);
   if (!pool.length) { exitState(); return; }
   quizState.list = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -2338,7 +2443,10 @@ function answerQuiz(i) {
     if (IS_TOUCH) speakText('没关系，答案是 ' + q.opts[q.ans]);
   }
   [...btns].forEach(b => b.disabled = true);
-  setTimeout(() => {
+  cancelQuizTimer();
+  quizState.timer = setTimeout(() => {
+    quizState.timer = null;
+    if (!quizState.active) return;   // 定时器触发前已退出答题，直接忽略
     quizState.idx++;
     if (quizState.idx < quizState.list.length) renderQuizQ();
     else finishQuiz();
@@ -2373,6 +2481,7 @@ function quizHandleInteract() {
 
 function endQuiz() {
   if (!quizState.active) return;
+  cancelQuizTimer();
   const bonus = quizState.right * 2;
   quizState.active = false;
   quizEl.style.display = 'none';
@@ -2383,6 +2492,7 @@ function endQuiz() {
 
 function closeQuiz() {
   if (!quizState.active) return;
+  cancelQuizTimer();
   quizState.active = false;
   quizEl.style.display = 'none';
   document.body.classList.remove('quiz-open');
@@ -2390,9 +2500,18 @@ function closeQuiz() {
   exitState();
 }
 
+// 自由活动时段：课间 / 活动课 / 放学 / 夜晚（上课、午休、课间操时不贴身跟随）
+function freeTime() {
+  const t = currentPeriod.type;
+  return t === 'break' || t === 'activity' || t === 'after' || t === 'night';
+}
 function updateFriendFollow(dt) {
+  // 玩家不在校园自由活动时，好友不贴身跟随（以免穿墙 / 追到校外 / 追进家里 / 追进室内活动）
+  if (atHome || rideActive || stateLock || currentRooftop || currentFloorBuilding) return;
   npcs.forEach(st => {
-    if (!st.following) return;
+    if (!st.following || st.wentHome) return;
+    // 有明确作息时好友回到自己的位置；正被调度赶路（有路径）时不跟随
+    if (!freeTime() || st.path.length) return;
     const dx = girl.position.x - st.group.position.x;
     const dz = girl.position.z - st.group.position.z;
     const dist = Math.hypot(dx, dz);
@@ -2401,6 +2520,7 @@ function updateFriendFollow(dt) {
       const speed = st.speed * 0.8;
       st.group.position.x += (dx / dist) * speed * dt;
       st.group.position.z += (dz / dist) * speed * dt;
+      st.group.position.y = 0;
       st.group.rotation.y = Math.atan2(dx, dz);
       st.walkPhase += dt * 7;
       st.state = 'walk';
@@ -2414,6 +2534,8 @@ function updateFriendFollow(dt) {
     } else if (dist < 3) {
       // 太近了，停下
       st.state = 'idle';
+      st.group.rotation.y = Math.atan2(dx, dz);
+      st.group.position.y = 0;
       const ud = st.group.userData;
       ud.legL.rotation.x *= 0.8;
       ud.legR.rotation.x *= 0.8;
@@ -2460,8 +2582,8 @@ function routeStudent(st, type) {
   let target, arrive;
   if (type === 'class' || type === 'read') { target = st.desk; arrive = 'sit'; }
   else if (type === 'lunch') { target = st.lunch; arrive = 'sit'; }
-  else if (type === 'exercise') { target = breakSpots[1]; arrive = 'idle'; }
-  else if (type === 'after') { target = dormFront; arrive = 'idle'; }
+  else if (type === 'exercise') { target = exerciseSpots[st.idx % exerciseSpots.length]; arrive = 'idle'; }
+  else if (type === 'after') { target = st.break; arrive = 'idle'; }
   else if (type === 'night') {
     // 晚上回家：走到校门然后消失
     target = new THREE.Vector3(0, 0, GATE_Z - 5);
@@ -2469,9 +2591,15 @@ function routeStudent(st, type) {
   }
   else { target = st.break; arrive = 'idle'; }
   const path = findPath(st.group.position.x, st.group.position.z, target.x, target.z);
-  st.path = path || [];
+  // 找不到路径时不要摆出走路姿势原地踏步，直接进入到达状态
+  if (path && path.length) { st.path = path; st.state = 'walk'; }
+  else {
+    st.path = [];
+    st.state = arrive;
+    // 夜间回家找不到路 → 直接视作已回家（避免滞留校园还追着玩家）
+    if (arrive === 'goHome') { st.wentHome = true; st.group.visible = false; }
+  }
   st.arrive = arrive;
-  st.state = 'walk';
 }
 
 /* ============================================================
@@ -2504,27 +2632,41 @@ const labSeat     = new THREE.Vector3(LAB.cx, 0, LAB.cz - 3);
 const adminDoorPt = new THREE.Vector3(ADMIN.cx, 0, ADMIN.cz + ADMIN.d / 2 + 2);
 const adminSeat   = new THREE.Vector3(ADMIN.cx, 0, ADMIN.cz - 3);
 
+// 家场景坐标（远离校园，在雾外，校园内看不到）
+const HOME_CX = 240, HOME_CZ = 230;
+const HOME = { cx: HOME_CX, cz: HOME_CZ, w: 22, d: 18 };
+const homeEatPt   = new THREE.Vector3(HOME.cx - 4, 0, HOME.cz + 1);
+const homeWorkPt  = new THREE.Vector3(HOME.cx + 4, 0, HOME.cz - 1);
+const homePlayPt  = new THREE.Vector3(HOME.cx + 5, 0, HOME.cz + 5);
+const homeSleepPt = new THREE.Vector3(HOME.cx - 4, 0, HOME.cz - 4);
+
 const stateDefs = {
-  class:   { name: '上课中',   sit: true,  time: 30, rot: Math.PI, path: [doorW, classSeat],   quiz: 'math',    fx: () => { stats.grades += 8; stats.knowledge += 6; stats.energy -= 5; } },
-  toilet:  { name: '上卫生间', sit: true,  time: 6,  rot: Math.PI, path: [toiletSeatF],         fx: () => { stats.mood += 4; } },
-  library: { name: '阅读中',   sit: true,  time: 10, rot: Math.PI, path: [libDoorPt, librarySeat], quiz: 'chinese', fx: () => { stats.knowledge += 12; stats.mood += 2; } },
-  canteen: { name: '用餐中',   sit: true,  time: 15,  rot: 0,       path: [cafFront, canteenSeat], fx: () => { stats.energy += 25; stats.mood += 3; } },
-  rest:    { name: '休息中',   sit: true,  time: 8,  rot: -0.5,    path: [benchSeat],           fx: () => { stats.energy += 15; stats.mood += 3; } },
-  fountain:{ name: '赏喷泉',   sit: false, time: 6,  rot: Math.PI, path: [fountainSpot],        fx: () => { stats.mood += 8; } },
-  garden:  { name: '逛花园',   sit: false, time: 6,  rot: Math.PI, path: [gardenSpot],          fx: () => { stats.mood += 7; } },
-  sport:   { name: '操场锻炼', sit: false, time: 8,  rot: 0,       path: [fieldSpot],           fx: () => { stats.energy -= 8; stats.mood += 10; } },
-  play:    { name: '玩滑梯',   sit: false, time: 8,  rot: Math.PI, path: [slideSpot],           fx: () => { stats.mood += 10; } },
-  swing:   { name: '荡秋千',   sit: true,  time: 10, rot: Math.PI, path: [swingSpot],           fx: () => { stats.mood += 12; } },
-  seesaw:  { name: '跷跷板',   sit: false, time: 8,  rot: 0,       path: [seesawSpot],          fx: () => { stats.mood += 8; } },
+  class:      { name: '上课中',   sit: true,  time: 45, rot: Math.PI, path: [doorW, classSeat],   quiz: 'current', fx: () => { stats.grades += 8; stats.knowledge += 6; stats.energy -= 5; } },
+  morningRead:{ name: '早读中',   sit: true,  time: 40, rot: Math.PI, path: [doorW, classSeat],   fx: () => { stats.knowledge += 8; stats.mood += 2; stats.energy -= 3; } },
+  toilet:  { name: '上卫生间', sit: true,  time: 14, rot: Math.PI, path: [toiletSeatF],         fx: () => { stats.mood += 4; } },
+  library: { name: '阅读中',   sit: true,  time: 30, rot: Math.PI, path: [libDoorPt, librarySeat], quiz: 'chinese', fx: () => { stats.knowledge += 12; stats.mood += 2; } },
+  canteen: { name: '用餐中',   sit: true,  time: 30,  rot: 0,       path: [cafFront, canteenSeat], fx: () => { stats.energy += 25; stats.mood += 3; } },
+  rest:    { name: '休息中',   sit: true,  time: 22,  rot: -0.5,    path: [benchSeat],           fx: () => { stats.energy += 15; stats.mood += 3; } },
+  fountain:{ name: '赏喷泉',   sit: false, time: 18,  rot: Math.PI, path: [fountainSpot],        fx: () => { stats.mood += 8; } },
+  garden:  { name: '逛花园',   sit: false, time: 18,  rot: Math.PI, path: [gardenSpot],          fx: () => { stats.mood += 7; } },
+  sport:   { name: '操场锻炼', sit: false, time: 22,  rot: 0,       path: [fieldSpot],           fx: () => { stats.energy -= 8; stats.mood += 10; } },
+  play:    { name: '玩滑梯',   sit: false, time: 22,  rot: Math.PI, path: [slideSpot],           fx: () => { stats.mood += 10; } },
+  swing:   { name: '荡秋千',   sit: true,  time: 26, rot: Math.PI, path: [swingSpot],           fx: () => { stats.mood += 12; } },
+  seesaw:  { name: '跷跷板',   sit: false, time: 22,  rot: 0,       path: [seesawSpot],          fx: () => { stats.mood += 8; } },
   basket:  { name: '投篮中',   sit: false, time: 0,  rot: Math.PI, path: [basketSpot],          fx: null },
-  gym:     { name: '体育馆锻炼', sit: false, time: 8, rot: Math.PI, path: [gymDoorPt, gymSeat],  fx: () => { stats.energy -= 8; stats.mood += 10; } },
-  dorm:    { name: '宿舍午休', sit: true,  time: 12, rot: Math.PI, path: [dormDoorPt, dormSeat], fx: () => { stats.energy += 25; stats.mood += 3; } },
-  lab:     { name: '做实验',   sit: true,  time: 10, rot: Math.PI, path: [labDoorPt, labSeat],   quiz: 'english', fx: () => { stats.knowledge += 12; stats.mood += 2; } },
-  admin:   { name: '交作业',   sit: true,  time: 8,  rot: Math.PI, path: [adminDoorPt, adminSeat], fx: () => { stats.grades += 5; } },
+  gym:     { name: '体育馆锻炼', sit: false, time: 22, rot: Math.PI, path: [gymDoorPt, gymSeat],  fx: () => { stats.energy -= 8; stats.mood += 10; } },
+  dorm:    { name: '宿舍午休', sit: true,  time: 28, rot: Math.PI, path: [dormDoorPt, dormSeat], fx: () => { stats.energy += 25; stats.mood += 3; } },
+  lab:     { name: '做实验',   sit: true,  time: 30, rot: Math.PI, path: [labDoorPt, labSeat],   quiz: 'english', fx: () => { stats.knowledge += 12; stats.mood += 2; } },
+  admin:   { name: '交作业',   sit: true,  time: 22,  rot: Math.PI, path: [adminDoorPt, adminSeat], fx: () => { stats.grades += 5; } },
+  homeEat:   { name: '吃晚饭', sit: true,  time: 24, rot: Math.PI,  path: [homeEatPt],   fx: () => { stats.energy += 20; stats.mood += 4; } },
+  homeWork:  { name: '写作业', sit: true,  time: 30, rot: 0,       path: [homeWorkPt],  fx: () => { stats.grades += 6; stats.knowledge += 5; stats.energy -= 4; } },
+  homePlay:  { name: '玩耍',   sit: false, time: 24, rot: 0,       path: [homePlayPt],  fx: () => { stats.mood += 14; stats.energy -= 3; } },
+  homeSleep:  { name: '睡觉',  sit: true,  time: 16, rot: 0,       path: [homeSleepPt], fx: () => { stats.energy += 40; stats.mood += 6; } },
 };
 
 const interactables = [
   { name: '教室',   pos: new THREE.Vector3(0, 0, -15),  radius: 7, prompt: '按 <b>E</b> 进教室<b>听课</b>', state: 'class' },
+  // 早读时教室入口的提示会由 updatePrompt 动态替换为"早读"
   { name: '图书馆', pos: new THREE.Vector3(LIB.cx, 0, LIB.cz + LIB.d / 2 + 2), radius: 6, prompt: '按 <b>E</b> 进图书馆<b>阅读</b>', state: 'library' },
   { name: '图书', pos: new THREE.Vector3(-58, 0, -40), radius: 2, prompt: '按 <b>E</b> 翻阅<b>书籍</b>', state: 'readBook' },
   { name: '食堂',   pos: new THREE.Vector3(CAF.cx, 0, CAF.cz + CAF.d / 2 + 2), radius: 6, prompt: '按 <b>E</b> 去食堂<b>吃饭</b>', state: 'canteen' },
@@ -2544,7 +2686,7 @@ const interactables = [
   { name: '花园',   pos: new THREE.Vector3(GARDEN.x, 0, GARDEN.z + 2), radius: 4, prompt: '按 <b>E</b> <b>逛花园</b>', state: 'garden' },
   ...accessibleBuildings.map(b => ({
     name: b.name, pos: b.entry, radius: 5,
-    prompt: '按 <b>E</b> 上<b>' + b.name + '</b>楼顶', state: 'rooftop', building: b,
+    prompt: '按 <b>E</b> 乘<b>电梯</b>上' + b.name + '（可选楼层 / 楼顶）', state: 'rooftop', building: b,
   })),
 ];
 
@@ -2570,15 +2712,22 @@ function enterState(name, it) {
   stateTimer = 0;
   let path = def.path;
   if (name === 'toilet' && it && it.seat) path = [it.seat];
-  girl.userData.path = path.slice();
+  girl.userData.path = path ? path.slice() : null;
   girl.userData.targetRot = def.rot;
   girl.userData.sitting = def.sit;
   if (name === 'basket') { camYaw = 0; bball.active = true; bball.score = 0; updateBballHUD(); }
   updateStateUI();
+  // 早读：打开课文朗读
+  if (name === 'morningRead') {
+    const book = morningReadings[morningReadIdx % morningReadings.length];
+    morningReadIdx++;
+    openBookUI(book);
+  }
   if (def.quiz) startQuiz(def.quiz);
 }
 function exitState() {
-  // 兜底：答题面板未关闭时强制关闭（如重置位置、异常退出）
+  // 兜底：答题面板未关闭时强制关闭（如重置位置、异常退出），并取消挂起的下一题定时器
+  cancelQuizTimer();
   if (quizState.active) {
     quizState.active = false;
     quizEl.style.display = 'none';
@@ -2590,6 +2739,10 @@ function exitState() {
   }
   if (currentState === 'basket') { bball.active = false; if (bball.ball) removeBall(); }
   if (currentState === 'play') { slidePhase = -1; slideTimer = 0; girl.position.y = 0; onGround = true; yVel = 0; }
+  // 早读退出时合上书
+  if (currentState === 'morningRead' && readingBook) closeBookUI();
+  // 睡觉：推进到次日清晨
+  if (currentState === 'homeSleep') { leaveHomeToNextDay(); }
   currentState = null;
   stateLock = false;
   stateTimer = 0;
@@ -2617,6 +2770,14 @@ function tryInteract() {
   if (pickupActive) { closePickupUI(); return; }
   // 淡入淡出中：忽略
   if (fadePhase > 0) return;
+  // 在家场景：优先响应家内设施
+  if (atHome) {
+    for (const it of homeInteractables) {
+      const r = IS_TOUCH ? it.radius * 1.5 : it.radius;
+      if (girl.position.distanceTo(it.pos) < r) { enterState(it.state, it); return; }
+    }
+    return;
+  }
   // 楼顶模式：按 E 下楼
   if (currentRooftop) { startFade(() => leaveRooftop()); return; }
   // 普通楼层：按 E 重新打开电梯（可选楼层或返回地面）
@@ -2638,6 +2799,11 @@ function tryInteract() {
         const book = libraryBooks[Math.floor(Math.random() * libraryBooks.length)];
         openBookUI(book);
         return;
+      }
+      // 教室：早读时段进入=早读（读课文），其余=上课
+      if (it.state === 'class') {
+        if (currentPeriod.type === 'read') { enterState('morningRead', it); return; }
+        enterState('class', it); return;
       }
       enterState(it.state, it); return;
     }
@@ -2661,6 +2827,7 @@ function leaveRooftop() {
   floorLevel = 0;
   currentRooftop = null;
   currentFloorBuilding = null;
+  currentFloor = 1;
   if (b) girl.position.set(b.entry.x, 0, b.entry.z);
   girl.position.y = 0; onGround = true; yVel = 0;
 }
@@ -2684,7 +2851,8 @@ const elevatorCurrentFloorEl = document.getElementById('elevatorCurrentFloor');
 function openElevator(building) {
   elevatorActive = true;
   currentElevatorBuilding = building;
-  currentFloor = building.currentFloor || 1;
+  const saved = building.currentFloor;
+  currentFloor = (typeof saved === 'number') ? saved : 1;
 
   if (document.pointerLockElement) document.exitPointerLock();
 
@@ -2696,7 +2864,9 @@ function openElevator(building) {
   let html = '';
   for (let i = 1; i <= totalFloors; i++) {
     const isCurrent = i === currentFloor ? 'current' : '';
-    html += `<div class="floor-btn ${isCurrent}" data-floor="${i}">${i}F</div>`;
+    // 1F 在地面：点击后走出建筑回到街道（避免被困在楼内）
+    const label = i === 1 ? '离开' : (i + 'F');
+    html += `<div class="floor-btn ${isCurrent}" data-floor="${i}">${label}</div>`;
   }
   // 添加楼顶按钮
   html += `<div class="floor-btn" data-floor="roof">楼顶</div>`;
@@ -2722,13 +2892,27 @@ function selectFloor(floor) {
 
   const building = currentElevatorBuilding;
 
-  if (floor === 'roof') {
+  if (floor === '1') {
+    // 1F = 回到地面，走出建筑（避免被困在楼内）
+    closeElevator();
+    startFade(() => {
+      floorLevel = 0;
+      currentRooftop = null;
+      currentFloorBuilding = null;
+      currentFloor = 1;
+      building.currentFloor = 1;
+      girl.position.set(building.entry.x, 0, building.entry.z);
+      yaw = 0; camYaw = 0; camPitch = -0.35;
+      onGround = true; yVel = 0;
+    });
+  } else if (floor === 'roof') {
     // 去楼顶
     closeElevator();
     startFade(() => {
       floorLevel = building.h;
       currentRooftop = building;
       currentFloorBuilding = null;
+      currentFloor = 1;                 // 楼顶不参与楼层显示
       building.currentFloor = 'roof';
       girl.position.set(building.x, building.h, building.z);
       yaw = 0; camYaw = 0; camPitch = -0.35;
@@ -2744,6 +2928,7 @@ function selectFloor(floor) {
       floorLevel = floorHeight;
       currentRooftop = null;
       currentFloorBuilding = building;
+      currentFloor = floorNum;
       building.currentFloor = floorNum;
       girl.position.set(building.x, floorHeight, building.z);
       yaw = 0; camYaw = 0; camPitch = 0;
@@ -2780,6 +2965,10 @@ const vKnow = document.getElementById('v-know');
 const bballEl = document.getElementById('bball');
 const bballScoreEl = document.getElementById('bball-score');
 const fadeEl = document.getElementById('fade');
+const ffIndEl = document.getElementById('ff-ind');
+function updateFFUI() {
+  if (ffIndEl) ffIndEl.style.display = fastForward ? 'block' : 'none';
+}
 
 function updateStateUI() {
   periodEl.textContent = currentPeriod.name;
@@ -2788,6 +2977,7 @@ function updateStateUI() {
   const mm = String(Math.floor((h % 1) * 60)).padStart(2, '0');
   clockEl.textContent = hh + ':' + mm;
   dayEl.textContent = '第' + dayCount + '天';
+  updateFFUI();
 }
 function updateStatsUI() {
   gradesBar.style.width = stats.grades + '%';
@@ -2888,7 +3078,7 @@ const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if (e.code === 'KeyE') tryInteract();
-  if (e.code === 'KeyQ') fastForward = !fastForward;
+  if (e.code === 'KeyQ') { fastForward = !fastForward; updateFFUI(); }
   if (e.code === 'KeyR') resetGirl();
   if (e.code === 'Escape' && chatActive) closeChat();
   if (e.code === 'Escape' && readingBook) closeBookUI();
@@ -3072,8 +3262,8 @@ tBtnInteract.addEventListener('touchstart', e => { e.preventDefault(); e.stopPro
 tBtnInteract.addEventListener('click', e => { e.preventDefault(); tryInteract(); });
 tBtnJump.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); if (bball.active) shootBall(); else if (onGround) { yVel = 9; onGround = false; } }, { passive: false });
 tBtnJump.addEventListener('click', e => { e.preventDefault(); if (bball.active) shootBall(); else if (onGround) { yVel = 9; onGround = false; } });
-tBtnFF.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); fastForward = !fastForward; }, { passive: false });
-tBtnFF.addEventListener('click', e => { e.preventDefault(); fastForward = !fastForward; });
+tBtnFF.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); fastForward = !fastForward; updateFFUI(); }, { passive: false });
+tBtnFF.addEventListener('click', e => { e.preventDefault(); fastForward = !fastForward; updateFFUI(); });
 tBtnReset.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); resetGirl(); }, { passive: false });
 tBtnReset.addEventListener('click', e => { e.preventDefault(); resetGirl(); });
 
@@ -3095,9 +3285,23 @@ let yVel = 0, onGround = true;
 const START_POS = new THREE.Vector3(0, 0, 55);
 
 function resetGirl() {
+  // 清理乘车 / 到家状态
+  if (rideActive) cleanupRide();
+  if (atHome) {
+    atHome = false;
+    if (rideParentSeat) { if (homeGroup) homeGroup.remove(rideParentSeat); rideParentSeat = null; }
+    if (homeGroup) { scene.remove(homeGroup); disposeObj(homeGroup); homeGroup = null; }
+  }
+  // 清理接送家长与回家状态（避免残留阻塞次日接送）
+  if (parentNPC) removeParent();
+  pickupWalkHome = false;
+  pickupWalkMode = 'walk';
+  pickupActive = false;
+  pickupEl.style.display = 'none';
   girl.position.copy(START_POS);
+  girl.position.y = 0; onGround = true; yVel = 0;
   yaw = 0; camYaw = 0; camPitch = -0.35; moveVel.set(0, 0, 0);
-  floorLevel = 0; currentRooftop = null;
+  floorLevel = 0; currentRooftop = null; currentFloorBuilding = null; currentFloor = 1;
   fadePhase = 0; fadeTimer = 0; fadeEl.style.opacity = '0';
   exitState();
 }
@@ -3112,6 +3316,13 @@ function updateCamera() {
   const camPos = girl.position.clone().addScaledVector(back, CAM_DIST);
   camPos.y += CAM_HEIGHT;
 
+  // 在家场景：相机限制在房间内（不穿墙）
+  if (atHome && HOME) {
+    const m = 1.5;
+    camPos.x = Math.max(HOME.cx - HOME.w / 2 + m, Math.min(HOME.cx + HOME.w / 2 - m, camPos.x));
+    camPos.z = Math.max(HOME.cz - HOME.d / 2 + m, Math.min(HOME.cz + HOME.d / 2 - m, camPos.z));
+    camPos.y = Math.min(camPos.y, 4.6);
+  }
   // 建筑内部：把相机限制在室内空间（不穿墙、不穿楼板），视野跟随进入建筑内部
   const bnd = currentFloorBuilding || (stateLock && indoorBounds[currentState]);
   if (bnd) {
@@ -3137,12 +3348,28 @@ function updatePrompt() {
   if (pickupActive) { promptEl.style.display = 'none'; return; }
   if (readingBook) { promptEl.style.display = 'none'; return; }
   if (pickupWalkHome) {
-    promptEl.innerHTML = '和爸爸一起回家…';
+    promptEl.innerHTML = '和' + parentLabel() + '一起走到校门…';
     promptEl.style.display = 'block';
     return;
   }
-  if (parentState === 'approaching') {
-    promptEl.innerHTML = '爸爸来接你了！';
+  if (rideActive) { promptEl.style.display = 'block'; return; }
+  if (atHome && !stateLock) {
+    const touchR = IS_TOUCH ? 1.5 : 1;
+    let found = null;
+    for (const it of homeInteractables) {
+      if (girl.position.distanceTo(it.pos) < it.radius * touchR) { found = it; break; }
+    }
+    if (found) { promptEl.innerHTML = fitPrompt(found.prompt); promptEl.style.display = 'block'; }
+    else { promptEl.innerHTML = '在家：吃饭 / 写作业 / 玩耍 / 睡觉'; promptEl.style.display = 'block'; }
+    return;
+  }
+  // 家长等待时给出引导（玩家在建筑楼顶/楼层时优先显示“按 E 下楼”，故此处排除）
+  if (!stateLock && !currentRooftop && !currentFloorBuilding &&
+      parentNPC && (parentState === 'approaching' || parentState === 'waiting')) {
+    const d = girl.position.distanceTo(parentNPC.position);
+    promptEl.innerHTML = d < 6
+      ? '和<b>' + parentLabel() + '</b>回家？按 <b>E</b> 选择交通方式'
+      : '👨‍👧 <b>' + parentLabel() + '</b>在校门口等你，快去找他一起回家';
     promptEl.style.display = 'block';
     return;
   }
@@ -3158,7 +3385,8 @@ function updatePrompt() {
   }
   if (stateLock) {
     let txt = '';
-    if (currentState === 'class') txt = fitPrompt('正在<b>听课</b>　按 <b>E</b> 下课');
+    if (currentState === 'class') txt = fitPrompt('正在<b>上' + (currentPeriod.subject ? SUBJECT_LABEL[currentPeriod.subject] : '') + '课</b>　按 <b>E</b> 下课');
+    else if (currentState === 'morningRead') txt = fitPrompt('正在<b>早读</b>　合上书本朗读　按 <b>E</b> 结束');
     else if (currentState === 'toilet') txt = fitPrompt('正在<b>上卫生间</b>　按 <b>E</b> 完成');
     else if (currentState === 'library') txt = fitPrompt('正在<b>阅读</b>　按 <b>E</b> 离开');
     else if (currentState === 'canteen') txt = fitPrompt('正在<b>用餐</b>　按 <b>E</b> 离开');
@@ -3169,6 +3397,10 @@ function updatePrompt() {
     else if (currentState === 'dorm') txt = fitPrompt('正在<b>宿舍午休</b>　按 <b>E</b> 起床');
     else if (currentState === 'lab') txt = fitPrompt('正在<b>做实验</b>　按 <b>E</b> 结束');
     else if (currentState === 'admin') txt = fitPrompt('正在<b>交作业</b>　按 <b>E</b> 离开');
+    else if (currentState === 'homeEat') txt = fitPrompt('正在<b>吃晚饭</b>　按 <b>E</b> 离开餐桌');
+    else if (currentState === 'homeWork') txt = fitPrompt('正在<b>写作业</b>　按 <b>E</b> 合上课本');
+    else if (currentState === 'homePlay') txt = fitPrompt('正在<b>玩耍</b>　按 <b>E</b> 收拾玩具');
+    else if (currentState === 'homeSleep') txt = fitPrompt('正在<b>睡觉</b>　按 <b>E</b> 起床');
     else txt = ACT_HINT + ' 结束';
     promptEl.innerHTML = txt; promptEl.style.display = 'block';
     return;
@@ -3181,6 +3413,8 @@ function updatePrompt() {
   if (found) {
     let t = found.prompt;
     if (IS_TOUCH && found.state === 'basket') t = '点 <b>交互</b> 打<b>篮球</b>（拖拽转视角，点<b>投篮</b>按钮投篮）';
+    // 教室入口：早读时段提示改为"早读"
+    if (found.state === 'class' && currentPeriod.type === 'read') t = '按 <b>E</b> 进教室<b>早读</b>📖';
     promptEl.innerHTML = fitPrompt(t); promptEl.style.display = 'block';
   }
   else if (chatCooldown <= 0) {
@@ -3234,15 +3468,17 @@ let walkPhase = 0;
 let statTicker = 0;
 
 function update(dt) {
-  // 时间推进
-  dayTime += dt * (fastForward ? 8 : 1);
-  if (dayTime >= DAY_LEN) { dayTime -= DAY_LEN; dayCount++; }
+  // 时间推进（到家后冻结时间，必须睡觉才能进入次日）
+  if (!atHome) dayTime += dt * (fastForward ? 4 : 1);
+  if (dayTime >= DAY_LEN) { dayTime -= DAY_LEN; dayCount++; fastForward = false; updateFFUI(); }
   const prevPeriodType = currentPeriod.type;
   currentPeriod = periodAt(hourNow());
   if (currentPeriod.type !== prevPeriodType) {
     updateStateUI();
     playBell(currentPeriod.type === 'class' || currentPeriod.type === 'read');
     routeStudentAll();
+    // 新的一天（早读）清理昨日残留的接送家长，避免阻塞当天放学
+    if (currentPeriod.type === 'read') removeParent();
     // 放学时爸妈来接
     if (currentPeriod.type === 'after' && !parentNPC) {
       spawnParent();
@@ -3270,6 +3506,8 @@ function update(dt) {
   }
   // 聊天冷却
   if (chatCooldown > 0) chatCooldown = Math.max(0, chatCooldown - dt);
+  // 接送面板冷却
+  if (pickupCooldown > 0) pickupCooldown = Math.max(0, pickupCooldown - dt);
 
   // 体力缓慢消耗（跑动更费体力）
   stats.energy -= (keys['ShiftLeft'] || keys['ShiftRight'] ? 0.3 : 0.1) * dt;
@@ -3287,8 +3525,8 @@ function update(dt) {
   }
   const path = girl.userData.path;
   let moving = false;
-  if (fadePhase > 0 || chatActive || pickupActive || readingBook) {
-    // 淡入淡出 / 聊天 / 阅读 / 接送期间禁止移动
+  if (fadePhase > 0 || chatActive || pickupActive || readingBook || rideActive || atHome) {
+    // 淡入淡出 / 聊天 / 阅读 / 接送 / 乘车 / 到家期间禁止自由移动
   } else if (pickupWalkHome) {
     // 和爸爸一起走向校门（自动跟随，不响应操作）
     const tx = 0, tz = GATE_Z + 8;
@@ -3354,8 +3592,8 @@ function update(dt) {
     if (keys['Space'] && onGround) { yVel = 9; onGround = false; }
   }
 
-  // 重力（滑梯动画期间由动画控制 Y）
-  if (slidePhase < 0) {
+  // 重力（滑梯动画期间由动画控制 Y；乘车期间由车辆控制 Y，不下落）
+  if (slidePhase < 0 && !rideActive) {
     if (!onGround) {
       yVel -= GRAVITY * dt;
       girl.position.y += yVel * dt;
@@ -3377,7 +3615,9 @@ function update(dt) {
 
   // 楼顶/楼层边界限制（替代地面碰撞，楼层上同样限制在建筑占地内避免空中走路）
   const boundaryBuilding = currentRooftop || currentFloorBuilding;
-  if (boundaryBuilding) {
+  if (rideActive) {
+    // 乘车期间：不碰撞、不夹墙，位置完全由 updateRide 控制
+  } else if (boundaryBuilding) {
     const b = boundaryBuilding;
     const m = 0.8;
     girl.position.x = Math.max(b.x - b.w / 2 + m, Math.min(b.x + b.w / 2 - m, girl.position.x));
@@ -3386,8 +3626,8 @@ function update(dt) {
     collidePlayer(girl.position);
   }
 
-  // 朝向（滑梯动画期间由动画控制朝向）
-  if (slidePhase < 0) {
+  // 朝向（滑梯动画期间由动画控制朝向；乘车期间由 startRideHome 固定）
+  if (slidePhase < 0 && !rideActive) {
     if (path && path.length) {
       const tp = path[0];
       girl.rotation.y = Math.atan2(tp.x - girl.position.x, tp.z - girl.position.z);
@@ -3495,6 +3735,8 @@ function update(dt) {
   updateNPCs(dt);
   updateFriendFollow(dt);
   updateParent(dt);
+  updateTeacher(dt);
+  updateRide(dt);
 
   // 篮球
   if (bball.active && !girl.userData.path) {
@@ -3534,6 +3776,40 @@ function routeStudentAll() {
   npcs.forEach(st => { st.zoneKey = currentPeriod.type; routeStudent(st, currentPeriod.type); });
 }
 
+// 老师显示/隐藏 + 讲台科目牌 + 微小站立动画
+function updateTeacher(dt) {
+  if (!teacherNPC) return;
+  const onDuty = (currentPeriod.type === 'class' || currentPeriod.type === 'read')
+    && !atHome && !rideActive && !pickupWalkHome;
+  if (onDuty !== teacherNPC.visible) teacherNPC.visible = onDuty;
+  if (!onDuty) {
+    if (subjectBoard) subjectBoard.visible = false;
+    return;
+  }
+  // 科目牌内容
+  const label = currentPeriod.type === 'read' ? '早读 · 语文'
+    : (SUBJECT_LABEL[currentPeriod.subject] || '语文') + ' 课';
+  if (subjectBoard) {
+    if (!subjectBoard.visible || subjectBoard.userData.label !== label) {
+      drawSubjectBoard(label);
+      subjectBoard.userData.label = label;
+    }
+    subjectBoard.visible = true;
+  }
+  // 老师面朝学生（+z），讲台前轻微踱步/手势
+  teacherNPC.userData.idleT += dt;
+  const t = teacherNPC.userData.idleT;
+  const ud = teacherNPC.userData;
+  // 朝向学生
+  teacherNPC.rotation.y = Math.sin(t * 0.6) * 0.25;
+  // 手臂小幅摆动（像在讲课/指点）
+  ud.armL.rotation.x = -0.3 + Math.sin(t * 2.2) * 0.18;
+  ud.armR.rotation.x = -0.2 + Math.cos(t * 2.2) * 0.22;
+  // 身体微幅起伏
+  teacherNPC.position.y = Math.abs(Math.sin(t * 1.8)) * 0.04;
+  ud.legL.rotation.x *= 0.85; ud.legR.rotation.x *= 0.85;
+}
+
 function updateNPCs(dt) {
   npcs.forEach(st => {
     // 已经回家的NPC不更新
@@ -3562,6 +3838,7 @@ function updateNPCs(dt) {
         st.path.shift();
         if (!st.path.length) {
           st.state = st.arrive;
+          st.baseRot = st.group.rotation.y;   // 待机摆动以当前朝向为基准
           // 如果到达状态是回家，则让NPC消失
           if (st.arrive === 'goHome') {
             st.wentHome = true;
@@ -3572,6 +3849,7 @@ function updateNPCs(dt) {
         const v = st.speed * dt;
         st.group.position.x += (dx / d) * v;
         st.group.position.z += (dz / d) * v;
+        st.group.position.y = 0;
         st.group.rotation.y = Math.atan2(dx, dz);
         st.walkPhase += dt * 7;
         st.state = 'walk';
@@ -3589,34 +3867,66 @@ function updateNPCs(dt) {
     } else {
       ud.legL.rotation.x *= 0.8; ud.legR.rotation.x *= 0.8;
       ud.armL.rotation.x *= 0.8; ud.armR.rotation.x *= 0.8;
+      // 待机：轻微左右转身 + 呼吸起伏，显得有生气
+      if (!st.path.length && !chatActive) {
+        st.idleT = (st.idleT || 0) + dt;
+        if (st.baseRot === undefined) st.baseRot = st.group.rotation.y;
+        st.group.rotation.y = st.baseRot + Math.sin(st.idleT * 0.9) * 0.08;
+        st.group.position.y = Math.abs(Math.sin(st.idleT * 1.6)) * 0.03;
+      }
     }
   });
 }
 
 /* ============================================================
-   父母接送系统
+   父母接送系统（爸爸 / 妈妈 随机）
 ============================================================ */
 let parentNPC = null;
 let parentState = 'none';    // none / approaching / waiting / leaving
+let parentSex = 'dad';       // dad / mom
 let pickupActive = false;
+let pickupCooldown = 0;      // 关闭接送面板后的短暂冷却，避免立刻重开
+const PARENT_MEET = new THREE.Vector3(0, 0, GATE_Z - 8); // 校门内侧广场：家长固定在这里等
 const pickupEl = document.getElementById('pickup');
+const pickupHeadEl = document.getElementById('pickupHead');
+
+function parentLabel() { return parentSex === 'mom' ? '妈妈' : '爸爸'; }
 
 function spawnParent() {
   if (parentNPC) return;
-  // 创建家长模型（成年男性，穿深色外套）
-  parentNPC = makeStudent({
-    skin: 0xf5cba0, hair: 0x212121, top: 0x424242, bottom: 0x263238, shoe: 0x1a1a1a,
-    ponytails: false,
-  });
+  // 随机爸爸或妈妈
+  parentSex = Math.random() < 0.5 ? 'mom' : 'dad';
+  if (parentSex === 'mom') {
+    parentNPC = makeStudent({
+      skin: 0xf8d0b0, hair: 0x3e2723, top: 0xc2185b, bottom: 0x4a148c, shoe: 0x1a1a1a,
+      ponytails: true,
+    });
+  } else {
+    parentNPC = makeStudent({
+      skin: 0xf5cba0, hair: 0x212121, top: 0x424242, bottom: 0x263238, shoe: 0x1a1a1a,
+      ponytails: false,
+    });
+  }
   parentNPC.scale.setScalar(1.15);
-  // 从校门外出现
-  parentNPC.position.set(0, 0, GATE_Z + 8);
+  parentNPC.position.set(0, 0, GATE_Z + 12);   // 从校门外走进来
   parentNPC.userData.walkPhase = 0;
   scene.add(parentNPC);
   parentState = 'approaching';
+  promptEl.innerHTML = '👨‍👧 ' + parentLabel() + '来接你啦，正在校门口等你…';
+  promptEl.style.display = 'block';
+}
+
+// 彻底清理接送家长 + 回家选择状态（新的一天 / 重置位置 / 到家兜底）
+function removeParent() {
+  if (parentNPC) { scene.remove(parentNPC); parentNPC = null; }
+  parentState = 'none';
+  pickupWalkHome = false;
+  pickupActive = false;
+  pickupEl.style.display = 'none';
 }
 
 function animateParentWalk(s) {
+  if (!parentNPC) return;
   const ud = parentNPC.userData;
   ud.legL.rotation.x = s * 0.5;
   ud.legR.rotation.x = -s * 0.5;
@@ -3624,6 +3934,7 @@ function animateParentWalk(s) {
   ud.armR.rotation.x = s * 0.4;
 }
 function animateParentIdle() {
+  if (!parentNPC) return;
   const ud = parentNPC.userData;
   ud.legL.rotation.x *= 0.8;
   ud.legR.rotation.x *= 0.8;
@@ -3632,17 +3943,23 @@ function animateParentIdle() {
 }
 
 function updateParent(dt) {
+  // 到家后不应再有接送的家长；若残留则清掉
+  if (atHome) {
+    if (parentNPC) removeParent();
+    return;
+  }
   if (!parentNPC) return;
 
   if (parentState === 'approaching') {
-    const dx = girl.position.x - parentNPC.position.x;
-    const dz = girl.position.z - parentNPC.position.z;
+    // 走到校门内侧固定集合点等待（不再追着玩家跑，避免永远追不上）
+    const dx = PARENT_MEET.x - parentNPC.position.x;
+    const dz = PARENT_MEET.z - parentNPC.position.z;
     const dist = Math.hypot(dx, dz);
-    if (dist < 3) {
+    if (dist < 1.2) {
+      parentNPC.position.copy(PARENT_MEET);
       parentState = 'waiting';
-      openPickupUI();
     } else {
-      const sp = 2.5 * dt;
+      const sp = 3.4 * dt;
       parentNPC.position.x += (dx / dist) * sp;
       parentNPC.position.z += (dz / dist) * sp;
       parentNPC.rotation.y = Math.atan2(dx, dz);
@@ -3654,17 +3971,20 @@ function updateParent(dt) {
     const dz = girl.position.z - parentNPC.position.z;
     parentNPC.rotation.y = Math.atan2(dx, dz);
     animateParentIdle();
+    // 玩家靠近 → 弹出回家选择（可重复触发：ESC 关闭后靠近仍会再开）
+    if (!pickupActive && !pickupWalkHome && pickupCooldown <= 0 &&
+        !quizState.active && Math.hypot(dx, dz) < 6) {
+      openPickupUI();
+    }
   } else if (parentState === 'leaving') {
     const tx = 0, tz = GATE_Z + 15;
     const dx = tx - parentNPC.position.x;
     const dz = tz - parentNPC.position.z;
     const dist = Math.hypot(dx, dz);
     if (dist < 1) {
-      scene.remove(parentNPC);
-      parentNPC = null;
-      parentState = 'none';
+      removeParent();
     } else {
-      const sp = 2.5 * dt;
+      const sp = 3.4 * dt;
       parentNPC.position.x += (dx / dist) * sp;
       parentNPC.position.z += (dz / dist) * sp;
       parentNPC.rotation.y = Math.atan2(dx, dz);
@@ -3676,6 +3996,7 @@ function updateParent(dt) {
 
 function openPickupUI() {
   pickupActive = true;
+  pickupHeadEl.textContent = parentLabel() + '来接你啦！';
   pickupEl.style.display = 'block';
   if (document.pointerLockElement) document.exitPointerLock();
 }
@@ -3683,10 +4004,11 @@ function openPickupUI() {
 function closePickupUI() {
   pickupActive = false;
   pickupEl.style.display = 'none';
+  pickupCooldown = 2;   // 短暂冷却，避免关掉后立刻又弹出来
   showLockHint(!isLockedNow());
 }
 
-let pickupWalkHome = false;   // 选完交通工具后，和爸爸一起走向校门
+let pickupWalkHome = false;   // 选完交通工具后，和爸爸/妈妈一起走向校门
 let pickupWalkMode = 'walk';  // 选择的回家方式
 
 function selectPickupMode(mode) {
@@ -3695,55 +4017,334 @@ function selectPickupMode(mode) {
   pickupWalkMode = mode;
   // 家长转身走向校门，带玩家一起回家
   if (parentNPC) parentState = 'leaving';
-  promptEl.innerHTML = '和爸爸一起回家…';
+  // 结束当前活动（如篮球、秋千），专心跟家长走
+  if (stateLock) exitState();
+  promptEl.innerHTML = '和' + parentLabel() + '一起走到校门…';
   promptEl.style.display = 'block';
 }
 
-// 玩家跟家长走到校门口后，淡出推进到次日早晨
+// 玩家跟家长走到校门口后 → 启动真实乘车回家流程
 function finishPickupWalkHome() {
   if (!pickupWalkHome) return;
   pickupWalkHome = false;
-  startFade(() => {
-    // 推进到次日 7:00（dayTime=0 对应 7:00）
-    dayTime = 0;
-    dayCount++;
-    // 玩家回到起始位置
-    girl.position.copy(START_POS);
-    girl.position.y = 0; onGround = true; yVel = 0;
-    floorLevel = 0; currentRooftop = null; currentFloorBuilding = null;
-    yaw = 0; camYaw = 0; camPitch = -0.35;
-    // 退出当前状态
-    exitState();
-    // 重置NPC
-    npcs.forEach(st => {
-      st.wentHome = false;
-      st.group.visible = true;
-      st.path = [];
-      st.state = 'idle';
-    });
-    currentPeriod = periodAt(hourNow());
-    routeStudentAll();
-    // 根据交通方式调整属性
-    if (pickupWalkMode === 'walk') {
-      stats.energy -= 10; stats.mood += 2;
-    } else if (pickupWalkMode === 'car') {
-      stats.energy += 5; stats.mood += 5;
-    } else if (pickupWalkMode === 'bus') {
-      stats.energy += 3; stats.mood += 3;
-    } else if (pickupWalkMode === 'subway') {
-      stats.energy += 8; stats.mood += 4;
-    }
-    clampStats();
-    updateStatsUI();
-    updateStateUI();
-    // 家长离开
-    if (parentNPC) { scene.remove(parentNPC); parentNPC = null; parentState = 'none'; }
-  });
+  startRideHome();
 }
 
 pickupEl.querySelectorAll('.pickup-btn').forEach(btn => {
   btn.onclick = () => selectPickupMode(btn.dataset.mode);
 });
+
+/* ============================================================
+   乘车回家系统（真实 3D 乘车 + 到家场景）
+=========================================================== */
+let rideActive = false;      // 乘车中
+let rideMode = 'walk';       // walk / car / bus / subway
+let rideTimer = 0;           // 乘车已过秒数
+const RIDE_DURATION = 7;     // 乘车展示时长（秒）
+let rideVehicle = null;      // 当前车辆 group
+let rideLights = [];         // 地铁隧道灯（每帧前移制造速度感）
+let rideParentSeat = null;   // 家长在车里的引用
+let atHome = false;          // 是否在家场景中
+let homeGroup = null;
+
+// 公交车工厂（单节大客车）
+function makeBus(color) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 2.6),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.2 }));
+  body.position.y = 1.8; body.castShadow = true; g.add(body);
+  // 车窗带
+  const winMat = new THREE.MeshStandardMaterial({ color: 0x1a3a4a, roughness: 0.1, metalness: 0.4, transparent: true, opacity: 0.75 });
+  for (let i = 0; i < 4; i++) {
+    const w = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.1, 2.65), winMat);
+    w.position.set(-2.6 + i * 1.75, 2.5, 0); g.add(w);
+  }
+  const frontWin = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.1, 2.65), winMat);
+  frontWin.position.set(3.4, 2.5, 0); g.add(frontWin);
+  // 车头灯
+  const hlMat = new THREE.MeshStandardMaterial({ color: 0xfff59d, emissive: 0xfff59d, emissiveIntensity: 0.6 });
+  [-0.9, 0.9].forEach(z => {
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.3), hlMat);
+    hl.position.set(4.05, 1.4, z); g.add(hl);
+  });
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
+  for (let wx of [-3, 0, 3]) for (let wz of [-1.3, 1.3]) {
+    const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.35, 14), wheelMat);
+    wh.rotation.x = Math.PI / 2; wh.position.set(wx, 0.55, wz); g.add(wh);
+  }
+  return g;
+}
+
+// 地铁车厢工厂（封闭车厢，侧窗 + 座椅）
+function makeSubwayCar() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(9, 3.2, 3),
+    new THREE.MeshStandardMaterial({ color: 0x9aa7b0, roughness: 0.3, metalness: 0.6 }));
+  body.position.y = 1.8; body.castShadow = true; g.add(body);
+  const winMat = new THREE.MeshStandardMaterial({ color: 0x10243a, roughness: 0.05, metalness: 0.5, transparent: true, opacity: 0.7 });
+  for (let i = 0; i < 5; i++) {
+    const w = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 3.05), winMat);
+    w.position.set(-3 + i * 1.5, 2.3, 0); g.add(w);
+  }
+  // 车厢顶部灯光条
+  const lightMat = new THREE.MeshStandardMaterial({ color: 0xfff8e1, emissive: 0xfff8e1, emissiveIntensity: 0.9 });
+  const lightBar = new THREE.Mesh(new THREE.BoxGeometry(8, 0.12, 1.2), lightMat);
+  lightBar.position.set(0, 3.25, 0); g.add(lightBar);
+  return g;
+}
+
+// 启动乘车回家
+function startRideHome() {
+  // 走路：和家长一路同行到校门后直接淡入到家
+  if (pickupWalkMode === 'walk') {
+    if (parentNPC) parentState = 'leaving';
+    startFade(() => { cleanupRide(); arriveHome(); });
+    return;
+  }
+  rideActive = true;
+  rideMode = pickupWalkMode;
+  rideTimer = 0;
+  if (document.pointerLockElement) document.exitPointerLock();
+  promptEl.style.display = 'none';
+
+  // 把玩家放到远离校园的路面上（车辆沿 +x 方向行驶，相机在车后跟随）
+  const startX = 0, startZ = GATE_Z + 40;
+  // 乘车朝向：车头朝 +x，玩家坐姿朝 +x，相机在车后方看前方
+  girl.rotation.y = Math.PI / 2;   // 朝 +x（车行方向）
+  yaw = Math.PI / 2;
+  camYaw = -Math.PI / 2;           // 相机在 -x 方向（车后），看向 +x
+  camPitch = -0.12;
+  girl.position.y = 0; onGround = true; yVel = 0;
+  floorLevel = 0; currentRooftop = null; currentFloorBuilding = null;
+
+  // 家长上车：隐藏步行家长（到家后家长在餐桌旁出现）
+  if (parentNPC) { scene.remove(parentNPC); parentNPC = null; parentState = 'none'; }
+  girl.userData.sitting = true;
+
+  if (rideMode === 'car') {
+    rideVehicle = makeCar(0xe53935);
+    scene.add(rideVehicle);
+    rideVehicle.position.set(startX, 0, startZ);
+    // 玩家坐在副驾（车体略偏 +z 侧、抬高到座椅高度）
+    girl.position.set(startX, 1.0, startZ + 0.45);
+  } else if (rideMode === 'bus') {
+    rideVehicle = makeBus(0x1e88e5);
+    scene.add(rideVehicle);
+    rideVehicle.position.set(startX, 0, startZ);
+    girl.position.set(startX, 1.5, startZ + 0.6);
+  } else if (rideMode === 'subway') {
+    rideVehicle = makeSubwayCar();
+    scene.add(rideVehicle);
+    rideVehicle.position.set(startX, 0, startZ);
+    girl.position.set(startX, 1.5, startZ + 0.6);
+    // 隧道：两侧深色长墙 + 顶部，制造封闭感
+    const tunnelMat = new THREE.MeshStandardMaterial({ color: 0x202830, roughness: 0.95 });
+    for (const side of [-1, 1]) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(80, 5.5, 0.4), tunnelMat);
+      wall.position.set(startX, 2.75, startZ + side * 3.2);
+      scene.add(wall); rideLights.push(wall);
+    }
+    const ceiling = new THREE.Mesh(new THREE.BoxGeometry(80, 0.4, 7), tunnelMat);
+    ceiling.position.set(startX, 5.4, startZ);
+    scene.add(ceiling); rideLights.push(ceiling);
+    // 隧道灯：在车厢一侧前方延伸，随车前移循环
+    const lm = new THREE.MeshStandardMaterial({ color: 0xffe082, emissive: 0xffe082, emissiveIntensity: 1.0 });
+    for (let i = 0; i < 16; i++) {
+      const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), lm);
+      lamp.position.set(startX - 12 + i * 3, 3.2, startZ - 2.9);
+      lamp.userData.isLamp = true;
+      scene.add(lamp);
+      rideLights.push(lamp);
+    }
+  }
+  const modeText = { car: '坐车回家', bus: '坐公交回家', subway: '坐地铁回家' }[rideMode];
+  promptEl.innerHTML = modeText + '…';
+  promptEl.style.display = 'block';
+}
+
+function updateRide(dt) {
+  if (!rideActive) return;
+  rideTimer += dt;
+  // 车辆持续向前移动（+x 方向），相机由 updateCamera 处理（跟随 girl）
+  const speed = rideMode === 'subway' ? 24 : (rideMode === 'bus' ? 16 : 20);
+  const dx = speed * dt;
+  if (rideVehicle) rideVehicle.position.x += dx;
+  girl.position.x += dx;   // 玩家随车一起移动，保持相对位置
+  // 隧道：墙体随车保持包围；灯随车前移并循环（产生速度感）
+  if (rideLights.length) {
+    rideLights.forEach(l => {
+      if (l.userData.isLamp) {
+        l.position.x += dx;
+        if (l.position.x > girl.position.x + 12) l.position.x -= 48;
+      } else {
+        // 隧道墙体跟随车辆，使相机始终处于封闭隧道中
+        l.position.x += dx;
+      }
+    });
+  }
+  // 乘车结束
+  if (rideTimer >= RIDE_DURATION) {
+    startFade(() => { cleanupRide(); arriveHome(); });
+  }
+}
+
+// 递归释放几何体 / 材质，避免反复乘车、往返家场景造成内存泄漏
+function disposeObj(root) {
+  if (!root) return;
+  root.traverse(o => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) {
+      const ms = Array.isArray(o.material) ? o.material : [o.material];
+      ms.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+    }
+  });
+}
+
+function cleanupRide() {
+  rideActive = false;
+  rideTimer = 0;
+  if (rideVehicle) { scene.remove(rideVehicle); disposeObj(rideVehicle); rideVehicle = null; }
+  if (rideLights.length) { rideLights.forEach(l => { scene.remove(l); disposeObj(l); }); rideLights = []; }
+  girl.userData.sitting = false;
+}
+
+/* ---------- 家场景 ---------- */
+function buildHome() {
+  if (homeGroup) return;
+  homeGroup = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xf5e6d3, roughness: 0.9 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xbfa07a, roughness: 0.95 });
+  // 地板
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(HOME.w, 0.4, HOME.d), floorMat);
+  floor.position.set(HOME.cx, 0.2, HOME.cz); floor.receiveShadow = true; homeGroup.add(floor);
+  // 四面墙
+  function wall(w, d, x, z) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 5, d), wallMat);
+    m.position.set(x, 2.7, z); m.castShadow = true; m.receiveShadow = true; homeGroup.add(m);
+  }
+  wall(HOME.w, 0.4, HOME.cx, HOME.cz - HOME.d / 2);
+  wall(HOME.w, 0.4, HOME.cx, HOME.cz + HOME.d / 2);
+  wall(0.4, HOME.d, HOME.cx - HOME.w / 2, HOME.cz);
+  wall(0.4, HOME.d, HOME.cx + HOME.w / 2, HOME.cz);
+  // 餐桌 + 椅子
+  const tableMat = new THREE.MeshStandardMaterial({ color: 0x6d4c41, roughness: 0.8 });
+  const dinnerTable = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.15, 2), tableMat);
+  dinnerTable.position.set(homeEatPt.x, 1.0, homeEatPt.z); dinnerTable.castShadow = true; homeGroup.add(dinnerTable);
+  for (let lx of [-1.1, 1.1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.0, 8), tableMat);
+    leg.position.set(homeEatPt.x + lx, 0.5, homeEatPt.z); homeGroup.add(leg);
+  }
+  // 餐盘（食物）
+  const foodMat = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.7 });
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 16), foodMat);
+  plate.position.set(homeEatPt.x, 1.12, homeEatPt.z); homeGroup.add(plate);
+  // 书桌 + 台灯
+  const deskMat = new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.85 });
+  const studyDesk = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 1.1), deskMat);
+  studyDesk.position.set(homeWorkPt.x, 1.05, homeWorkPt.z); studyDesk.castShadow = true; homeGroup.add(studyDesk);
+  for (let lx of [-1.0, 1.0]) for (let lz of [-0.4, 0.4]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.0, 6), deskMat);
+    leg.position.set(homeWorkPt.x + lx, 0.5, homeWorkPt.z + lz); homeGroup.add(leg);
+  }
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0xfff59d, emissive: 0xfff59d, emissiveIntensity: 0.7 });
+  const lamp = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 12), lampMat);
+  lamp.position.set(homeWorkPt.x - 0.7, 1.6, homeWorkPt.z); homeGroup.add(lamp);
+  // 床
+  const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 3.4), tableMat);
+  bedFrame.position.set(homeSleepPt.x, 0.5, homeSleepPt.z); bedFrame.castShadow = true; homeGroup.add(bedFrame);
+  const mattressMat = new THREE.MeshStandardMaterial({ color: 0x90caf9, roughness: 0.9 });
+  const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.3, 3.2), mattressMat);
+  mattress.position.set(homeSleepPt.x, 0.9, homeSleepPt.z); homeGroup.add(mattress);
+  const pillowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+  const pillow = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.2, 0.6), pillowMat);
+  pillow.position.set(homeSleepPt.x, 1.15, homeSleepPt.z - 1.2); homeGroup.add(pillow);
+  // 玩具区（积木 + 小球）
+  const toyMatA = new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.6 });
+  const toyMatB = new THREE.MeshStandardMaterial({ color: 0x43a047, roughness: 0.6 });
+  const toyMatC = new THREE.MeshStandardMaterial({ color: 0xffeb3b, roughness: 0.6 });
+  for (let i = 0; i < 5; i++) {
+    const mats = [toyMatA, toyMatB, toyMatC];
+    const blk = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), mats[i % 3]);
+    blk.position.set(homePlayPt.x - 1 + i * 0.7, 0.3 + (i % 2) * 0.6, homePlayPt.z + (i % 2) * 0.5);
+    blk.castShadow = true; homeGroup.add(blk);
+  }
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 10),
+    new THREE.MeshStandardMaterial({ color: 0xff9800, roughness: 0.5 }));
+  ball.position.set(homePlayPt.x + 1.2, 0.35, homePlayPt.z - 0.5); ball.castShadow = true; homeGroup.add(ball);
+  // 家里的家长（坐在餐桌旁）
+  if (parentSex === 'mom') {
+    rideParentSeat = makeStudent({ skin: 0xf8d0b0, hair: 0x3e2723, top: 0xc2185b, bottom: 0x4a148c, ponytails: true });
+  } else {
+    rideParentSeat = makeStudent({ skin: 0xf5cba0, hair: 0x212121, top: 0x424242, bottom: 0x263238 });
+  }
+  rideParentSeat.scale.setScalar(1.15);
+  rideParentSeat.position.set(homeEatPt.x + 1.2, 0, homeEatPt.z);
+  rideParentSeat.rotation.y = -Math.PI / 2;
+  rideParentSeat.userData.sitting = true;
+  homeGroup.add(rideParentSeat);
+
+  scene.add(homeGroup);
+}
+
+const homeInteractables = [
+  { name: '餐桌', pos: homeEatPt,   radius: 3.5, prompt: '按 <b>E</b> 吃<b>晚饭</b>🍚', state: 'homeEat' },
+  { name: '书桌', pos: homeWorkPt,  radius: 3.0, prompt: '按 <b>E</b> 写<b>作业</b>✏️', state: 'homeWork' },
+  { name: '玩具', pos: homePlayPt,  radius: 3.0, prompt: '按 <b>E</b> 玩<b>玩具</b>🧸', state: 'homePlay' },
+  { name: '床',   pos: homeSleepPt, radius: 3.2, prompt: '按 <b>E</b> 上<b>床睡觉</b>💤', state: 'homeSleep' },
+];
+
+function arriveHome() {
+  buildHome();
+  atHome = true;
+  girl.position.set(HOME.cx, 0, HOME.cz + 5);
+  girl.position.y = 0; onGround = true; yVel = 0;
+  girl.rotation.y = Math.PI; yaw = Math.PI; camYaw = 0; camPitch = -0.35;
+  floorLevel = 0; currentRooftop = null; currentFloorBuilding = null; currentFloor = 1;
+  // 清理可能残留的活动状态（不触发 fx，避免错误加分）
+  if (readingBook) closeBookUI();
+  if (quizState.active) { quizState.active = false; quizEl.style.display = 'none'; document.body.classList.remove('quiz-open'); }
+  if (stateLock) { stateLock = false; stateTimer = 0; }
+  currentState = null;
+  girl.userData.path = null; girl.userData.targetRot = undefined; girl.userData.sitting = false;
+  // 时间推进到晚上
+  dayTime = DAY_LEN * 0.86;   // ≈ 19:54
+  currentPeriod = periodAt(hourNow());
+  routeStudentAll();
+  promptEl.innerHTML = '到家啦！吃饭 / 写作业 / 玩耍，累了就上床<b>睡觉</b>';
+  promptEl.style.display = 'block';
+  updateStateUI();
+}
+
+// 睡觉后：推进到次日清晨，回到学校
+function leaveHomeToNextDay() {
+  startFade(() => {
+    atHome = false;
+    if (rideParentSeat) { if (homeGroup) homeGroup.remove(rideParentSeat); rideParentSeat = null; }
+    if (homeGroup) { scene.remove(homeGroup); disposeObj(homeGroup); homeGroup = null; }
+    // 交通方式带来的状态加成（到家路上已用，这里仅补全次日体力/心情）
+    if (rideMode === 'walk') { stats.energy = Math.max(stats.energy, 30); }
+    else if (rideMode === 'car') { stats.mood += 5; }
+    else if (rideMode === 'bus') { stats.mood += 3; }
+    else if (rideMode === 'subway') { stats.mood += 4; }
+    rideMode = 'walk';
+    // 清理状态
+    if (readingBook) closeBookUI();
+    if (quizState.active) { quizState.active = false; quizEl.style.display = 'none'; document.body.classList.remove('quiz-open'); }
+    if (stateLock) { stateLock = false; stateTimer = 0; }
+    currentState = null;
+    girl.userData.path = null; girl.userData.targetRot = undefined; girl.userData.sitting = false;
+    // 推进到次日 7:00
+    dayTime = 0; dayCount++;
+    girl.position.copy(START_POS);
+    girl.position.y = 0; onGround = true; yVel = 0;
+    floorLevel = 0; currentRooftop = null; currentFloorBuilding = null; currentFloor = 1;
+    yaw = 0; camYaw = 0; camPitch = -0.35;
+    npcs.forEach(st => { st.wentHome = false; st.group.visible = true; st.path = []; st.state = 'idle'; });
+    currentPeriod = periodAt(hourNow());
+    routeStudentAll();
+    clampStats(); updateStatsUI(); updateStateUI();
+  });
+}
 
 function animate() {
   requestAnimationFrame(animate);
